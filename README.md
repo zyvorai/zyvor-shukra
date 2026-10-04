@@ -1,9 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/shukra-social-dark.png">
-  <img src="docs/shukra-social.png" alt="Shukra — eBPF runtime intelligence for KVM" width="820">
-</picture>
+<img src="docs/social/shukra-hero-dark.jpg" alt="Shukra - Every VM, from outside. No agent in the guest." width="100%">
 
 # Shukra
 
@@ -12,7 +9,7 @@
 Shukra sits on the hypervisor and watches every QEMU/KVM workload from outside the guest.<br>
 There is no agent to install in the VM. **Observe. Protect. Explain.**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/zyvorai/shukra/ci.yml?branch=main&style=flat-square&labelColor=1d1d1f&label=CI)](https://github.com/zyvorai/shukra/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/zyvorai/zyvor-shukra/ci.yml?branch=main&style=flat-square&labelColor=1d1d1f&label=CI)](https://github.com/zyvorai/zyvor-shukra/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0071e3?style=flat-square&labelColor=1d1d1f)](LICENSE)
 [![Go 1.27+](https://img.shields.io/badge/go-1.27%2B-0071e3?style=flat-square&labelColor=1d1d1f)](#requirements)
 [![Linux 6.6+ for guest traffic and isolation](https://img.shields.io/badge/linux-6.6%2B%20for%20the%20tap-0071e3?style=flat-square&labelColor=1d1d1f)](#requirements)
