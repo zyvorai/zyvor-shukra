@@ -1,13 +1,6 @@
 <div align="center">
 
-<img src="docs/social/shukra-hero-dark.jpg" alt="Shukra - Every VM, from outside. No agent in the guest." width="100%">
-
 # Shukra
-
-### eBPF-powered runtime intelligence and security for KVM.
-
-Shukra sits on the hypervisor and watches every QEMU/KVM workload from outside the guest.<br>
-There is no agent to install in the VM. **Observe. Protect. Explain.**
 
 [![CI](https://img.shields.io/github/actions/workflow/status/zyvorai/zyvor-shukra/ci.yml?branch=main&style=flat-square&labelColor=1d1d1f&label=CI)](https://github.com/zyvorai/zyvor-shukra/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0071e3?style=flat-square&labelColor=1d1d1f)](LICENSE)
@@ -15,17 +8,72 @@ There is no agent to install in the VM. **Observe. Protect. Explain.**
 [![Linux 6.6+ for guest traffic and isolation](https://img.shields.io/badge/linux-6.6%2B%20for%20the%20tap-0071e3?style=flat-square&labelColor=1d1d1f)](#requirements)
 [![x86_64 and arm64](https://img.shields.io/badge/arch-x86__64%20%C2%B7%20arm64-0071e3?style=flat-square&labelColor=1d1d1f)](#requirements)
 
-[**Quick start**](#quick-start) · [**Tutorials**](docs/tutorials/README.md) · [**API**](docs/api.md) · [**All docs**](docs/index.md) · [**Product brochure (PDF)**](docs/sales/brochure/Zyvor-Shukra-Product-Brochure.pdf) · [**Changelog**](CHANGELOG.md)
+[![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=shukra&utm_campaign=readme_hero)
+[![30-day PoC](https://img.shields.io/badge/30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=shukra&utm_campaign=readme_hero)
+[![Quickstart](https://img.shields.io/badge/Quickstart_on_one_hypervisor-ff9f0a?style=for-the-badge)](#quickstart)
+
+![Shukra - Every VM, from outside. No agent in the guest.](docs/social/shukra-hero-dark.jpg)
+
+### Every VM, from outside. No agent in the guest.
+
+**eBPF-powered runtime intelligence and security for KVM.** Shukra sits on the hypervisor and watches every QEMU/KVM workload from outside the guest. There is no agent to install in the VM. **Observe. Protect. Explain.**
+
+**8** eBPF programs · **35** kernel attach points · **0** agents in the guest · **17** console pages · **38** HTTP routes · **21** `shukractl` commands
+
+[**Tutorials**](docs/tutorials/README.md) · [**API**](docs/api.md) · [**All docs**](docs/index.md) · [**Product brochure (PDF)**](docs/sales/brochure/Zyvor-Shukra-Product-Brochure.pdf) · [**Changelog**](CHANGELOG.md)
 
 </div>
 
 ---
 
-## What Shukra is
+## What's new
 
-The daemon attaches kernel traces, joins them to the QEMU process, and gives an operator a console and a CLI that say what they know, how they know it, and what they cannot see.
+| | |
+|---|---|
+| **Host network control-plane events** (Unreleased) | Link, address, route and neighbor changes from Netlink become events; a change that can cut a VM off (tap deleted or down, default route removed) is a detection with nothing to configure. |
+| **Egress policy** (0.1.0) | `shukractl policy` learns which networks a VM connects to, audits the list first, and enforces only with a management allow list and a confirm timer or `--permanent`. |
+| **VMM tripwires** (0.1.0) | The `vmm` program flags a QEMU process, or anything it started, opening sensitive files or making calls a VMM never makes. |
+| **TLS server names** (0.1.0) | `guest_tls` events: the SNI, ALPN, version and JA3 of each ClientHello a guest sends, seen on its tap; `-tls-events=false` turns it off. |
+| **Memory pressure and block queue time** (0.1.0) | Direct reclaim stalls and OOM kills of the VMM process; block queue time measured separately from device service time. |
+| **A lighter daemon** (0.1.0) | On a 12-core, 10-VM production node: from about 55% of a core and 155 MB to 5 to 9% and about 88 MB, with the same output. |
 
-**8** eBPF programs · **35** kernel attach points · **0** agents in the guest · **17** console pages · **38** HTTP routes · **21** `shukractl` commands
+Full history: [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## Why Shukra
+
+| When this happens… | Shukra gives you… |
+|---|---|
+| A VM is slow and the guest's own tools see nothing wrong | `shukractl explain <vm>`: ranked host-side causes over the last minute, with evidence and a list of what Shukra cannot see |
+| It *was* slow at 03:12, and nobody was looking | `explain --at` for a past time, and `shukractl incident` writes a bundle for the ticket |
+| One VM is eating its neighbours' CPU | vCPU preemption and contention: who took whose CPU, plus right-sizing advice that never resizes anything |
+| A connection fails and you can't log into the guest | The VM's own tap: connects, DNS names, TLS server names, what became of each handshake, and kernel drop reasons |
+| A compromised VMM is your worst case | VMM tripwires on every QEMU process with nothing to configure, and `shukractl isolate` on approval |
+| Installing agents in customer VMs is not an option | No agent in the guest: everything is traced on the hypervisor and joined to the QEMU process |
+
+![Capabilities at a glance: Explain, Observe, Traffic, Protect](docs/ux/readme-capabilities.jpg)
+
+---
+
+## Shukra vs libvirt exporter + Prometheus
+
+![Shukra vs libvirt exporter + Prometheus: not just counters, causes with evidence](docs/ux/readme-vs.jpg)
+
+| | **Shukra** | **libvirt exporter + Prometheus** (typical KVM monitoring) |
+|---|---|---|
+| Data source | eBPF on the hypervisor: KVM exits, scheduler, block, memory, VM taps, VMM syscalls | libvirt domain statistics |
+| Per-VM metrics | Histograms and counters, plus Prometheus `/metrics` | Counters for CPU, memory, disk and network |
+| Slow VM | Ranked host-side causes with evidence, now or for a past time | Graphs to correlate by hand |
+| Noisy neighbours | vCPU preemption: who took whose CPU | CPU time per VM |
+| Guest traffic | Connects, handshakes, DNS and TLS names on the VM's tap | Interface byte, packet and drop counters |
+| Dropped packets | Per tap, by the kernel's own drop reason | Drop counts |
+| Response | Audit-first egress policy and isolation on approval, off until configured | Observe only |
+| **Choose the libvirt exporter when** | | Per-VM counters in Grafana are enough, or the host cannot run eBPF |
+
+---
+
+## See it live
 
 <table>
   <tr>
@@ -36,6 +84,10 @@ The daemon attaches kernel traces, joins them to the QEMU process, and gives an 
 </table>
 
 <sub>The screenshots are the console in fixture mode (`web/src/fixtures.ts`), not a live host. The [brochure](docs/sales/brochure/Zyvor-Shukra-Product-Brochure.pdf) walks a slow VM, a noisy neighbour, a past incident and lost traffic from start to finish.</sub>
+
+## What Shukra does
+
+The daemon attaches kernel traces, joins them to the QEMU process, and gives an operator a console and a CLI that say what they know, how they know it, and what they cannot see.
 
 <table>
 <tr>
@@ -74,6 +126,30 @@ Learns what a VM may connect to and audits it before it enforces, isolates a VM 
 </tr>
 </table>
 
+---
+
+<a id="architecture"></a>
+
+## How it fits together
+
+![eBPF on the hypervisor, guests untouched](docs/ux/readme-how-it-works.jpg)
+
+```text
+┌──────────────────── hypervisor ────────────────────┐
+│  VMM processes                 (guests untouched)  │
+│      ▲ tap or host veth vh*                        │
+│  kvm / sched / block / net / drops / vmm / tap     │  eBPF, CO-RE, maps + small rings
+│              │                                     │
+│           shukrad                                  │  identity, sampler, rules, responses, state, API
+│         :30970 API                                 │
+└──────────────┬─────────────────────────────────────┘
+               │ bearer
+       ┌───────┴────────┐
+   shukractl         console
+```
+
+How identity, the tap program, history windows and detection fit together is in [architecture](docs/architecture.md); the short version is in [Architecture at a glance](docs/architecture-at-a-glance.md).
+
 | | |
 |---|---|
 | Daemon | `shukrad`: privileged, attaches traces, serves the API and console |
@@ -81,6 +157,41 @@ Learns what a VM may connect to and audits it before it enforces, isolates a VM 
 | Console | `http://<hypervisor>:30970` |
 | Module | `github.com/zyvorai/shukra` |
 | License | [Apache-2.0](LICENSE) |
+
+---
+
+<a id="quick-start"></a>
+
+## Quickstart
+
+Go 1.27+ and Node 22 for the console.
+
+```bash
+make build
+make web
+./bin/shukrad -listen 127.0.0.1:30970 -web web/dist
+./bin/shukractl status
+```
+
+If `SHUKRA_API_KEY` is unset, the daemon uses the dev token `shukra` and says so on stderr. Open `http://127.0.0.1:30970` and sign in with that token. On a Mac, or any host without BTF, programs stay detached; VM discovery from `/proc` still works. To attach traces you need Linux, clang, bpftool and kernel BTF: see [Attach traces](docs/tutorials/02-attach-traces.md).
+
+Shukra is a systemd unit on the hypervisor, not a Helm chart: eBPF has to run where the VMs run. Deploy with `./scripts/deploy-remote.sh 10.0.1.5 sus`; the walkthrough, the operator loop, rules and flags are in [Getting started](docs/getting-started.md).
+
+## Requirements
+
+| To get | You need |
+|---|---|
+| The daemon, CLI and API | Go 1.27+ to build (or a release tarball or `.deb`). Runs anywhere; programs are detached without BPF |
+| The console | Node 22 to build it |
+| `kvm`, `sched`, `block`, `net`, `vmm` | Linux with kernel BTF (`/sys/kernel/btf/vmlinux`), and `CAP_BPF` (5.8+) |
+| `drops` | Linux 5.17+ (a drop reason on `kfree_skb`) |
+| `tap`, guest traffic, egress policy and isolation | Linux 6.6+ (TCX), and `CAP_NET_ADMIN` |
+| libvirt VMs' taps | `CAP_SYS_PTRACE` and `CAP_DAC_READ_SEARCH` |
+| Building the programs | Linux with `clang` and `bpftool` |
+
+A program the kernel cannot support reports itself `detached` with the reason, and the others still run. See [architecture](docs/architecture.md#kernel-requirements).
+
+---
 
 <a id="what-it-answers"></a>
 
@@ -111,55 +222,6 @@ Read this before you trust it with anything.
 
 The full list, with every caveat and what is not built yet: [What it does not do](docs/what-it-does-not-do.md).
 
-## Requirements
-
-| To get | You need |
-|---|---|
-| The daemon, CLI and API | Go 1.27+ to build (or a release tarball or `.deb`). Runs anywhere; programs are detached without BPF |
-| The console | Node 22 to build it |
-| `kvm`, `sched`, `block`, `net`, `vmm` | Linux with kernel BTF (`/sys/kernel/btf/vmlinux`), and `CAP_BPF` (5.8+) |
-| `drops` | Linux 5.17+ (a drop reason on `kfree_skb`) |
-| `tap`, guest traffic, egress policy and isolation | Linux 6.6+ (TCX), and `CAP_NET_ADMIN` |
-| libvirt VMs' taps | `CAP_SYS_PTRACE` and `CAP_DAC_READ_SEARCH` |
-| Building the programs | Linux with `clang` and `bpftool` |
-
-A program the kernel cannot support reports itself `detached` with the reason, and the others still run. See [architecture](docs/architecture.md#kernel-requirements).
-
-## Quick start
-
-Go 1.27+ and Node 22 for the console.
-
-```bash
-make build
-make web
-./bin/shukrad -listen 127.0.0.1:30970 -web web/dist
-./bin/shukractl status
-```
-
-If `SHUKRA_API_KEY` is unset, the daemon uses the dev token `shukra` and says so on stderr. Open `http://127.0.0.1:30970` and sign in with that token. On a Mac, or any host without BTF, programs stay detached; VM discovery from `/proc` still works. To attach traces you need Linux, clang, bpftool and kernel BTF: see [Attach traces](docs/tutorials/02-attach-traces.md).
-
-Shukra is a systemd unit on the hypervisor, not a Helm chart: eBPF has to run where the VMs run. Deploy with `./scripts/deploy-remote.sh 10.0.1.5 sus`; the walkthrough, the operator loop, rules and flags are in [Getting started](docs/getting-started.md).
-
-<a id="architecture"></a>
-
-## Architecture
-
-```text
-┌──────────────────── hypervisor ────────────────────┐
-│  VMM processes                 (guests untouched)  │
-│      ▲ tap or host veth vh*                        │
-│  kvm / sched / block / net / drops / vmm / tap     │  eBPF, CO-RE, maps + small rings
-│              │                                     │
-│           shukrad                                  │  identity, sampler, rules, responses, state, API
-│         :30970 API                                 │
-└──────────────┬─────────────────────────────────────┘
-               │ bearer
-       ┌───────┴────────┐
-   shukractl         console
-```
-
-How identity, the tap program, history windows and detection fit together is in [architecture](docs/architecture.md); the short version is in [Architecture at a glance](docs/architecture-at-a-glance.md).
-
 ## Go deeper
 
 - <a id="the-programs"></a>**The programs:** eight programs and their 35 attach points, and what each records — [docs/programs.md](docs/programs.md).
@@ -188,8 +250,45 @@ How identity, the tap program, history windows and detection fit together is in 
 
 Every tutorial and reference page is listed in [docs/index.md](docs/index.md).
 
+---
+
+## Maturity
+
+Shukra **0.1.0** is tagged; [CHANGELOG.md](CHANGELOG.md) lists what has merged to `main` since, and [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md) describes the release. Responses, egress policy and baselines are off until you configure or apply them, guest traffic and isolation need Linux 6.6+ (TCX), and every limit is listed in [What it does not do](docs/what-it-does-not-do.md).
+
+---
+
+## Part of the Zyvor stack
+
+| Product | Role next to Shukra |
+|---|---|
+| **Shukra** | eBPF runtime intelligence and security for KVM hypervisors, no agent in the guest |
+| **[FluxVM](https://github.com/zyvorai/zyvor-fluxvm)** | Shukra names FluxVM guests (QEMU, Cloud Hypervisor, Firecracker) from FluxVM's `vms.json` and traces their traffic on the host veth ([FluxVM](docs/tap.md#fluxvm)) |
+| **[GuestKit](https://github.com/zyvorai/zyvor-guestkit)** | Pairs with Shukra when you do want to look inside a guest: in-guest agent and offline inspection |
+| **[Netra](https://github.com/zyvorai/zyvor-netra)** | Pairs with Shukra for CNI-independent eBPF network observability on Kubernetes nodes |
+
+→ [zyvor.dev](https://zyvor.dev)
+
+---
+
 ## License
 
-Commercial subscriptions and support: see [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md).
+Shukra is **free and open source** under the [Apache License 2.0](LICENSE). Copyright 2026 Zyvor. That does not change.
 
-Apache-2.0. Copyright 2026 Zyvor. See [LICENSE](LICENSE).
+**Zyvor Enterprise** adds what production teams ask for: supported releases, deployment and upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake. Plans and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=shukra&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
+
+What Shukra reads, what it can do, and what a hostile guest can do to it: [SECURITY.md](SECURITY.md).
+
+---
+
+<div align="center">
+
+### See inside every VM without touching one
+
+[![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=shukra&utm_campaign=readme_footer)
+[![30-day PoC](https://img.shields.io/badge/Start_a_30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=shukra&utm_campaign=readme_footer)
+[![Pricing](https://img.shields.io/badge/Pricing-1d1d1f?style=for-the-badge)](https://zyvor.dev/pricing?utm_source=github&utm_medium=shukra&utm_campaign=readme_footer)
+[![Contact sales](https://img.shields.io/badge/Contact_sales-ff9f0a?style=for-the-badge)](mailto:sales@zyvor.dev?subject=Shukra)
+[![Star on GitHub](https://img.shields.io/github/stars/zyvorai/zyvor-shukra?style=for-the-badge&logo=github&label=Star&color=2997ff)](https://github.com/zyvorai/zyvor-shukra)
+
+</div>
