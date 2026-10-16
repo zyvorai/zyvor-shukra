@@ -1,0 +1,225 @@
+<!doctype html>
+<!-- Copyright 2026 Zyvor AI Labs · https://zyvor.dev · SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Shukra · eBPF runtime intelligence for KVM</title>
+  <meta name="description" content="eBPF-powered runtime intelligence and security for KVM. Shukra watches every QEMU/KVM workload from the hypervisor, with no agent in the guest. Free under Apache-2.0." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://zyvorai.github.io/zyvor-shukra/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Shukra" />
+  <meta property="og:title" content="Shukra · eBPF runtime intelligence for KVM" />
+  <meta property="og:description" content="eBPF-powered runtime intelligence and security for KVM. Shukra watches every QEMU/KVM workload from the hypervisor, with no agent in the guest. Free under Apache-2.0." />
+  <meta property="og:url" content="https://zyvorai.github.io/zyvor-shukra/" />
+  <meta name="twitter:card" content="summary" />
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="site.css" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"Shukra","description":"eBPF-powered runtime intelligence and security for KVM, with no agent in the guest.","codeRepository":"https://github.com/zyvorai/zyvor-shukra","programmingLanguage":"Go","license":"https://www.apache.org/licenses/LICENSE-2.0","url":"https://zyvorai.github.io/zyvor-shukra/"}
+  </script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <a class="brand" href="./" aria-label="Shukra home">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0d0d0c"/><path d="M3.5 16C8 9.5 13 7.5 16 7.5s8 2 12.5 8.5C24 22.5 19 24.5 16 24.5S8 22.5 3.5 16z" fill="none" stroke="#ff7a3d" stroke-width="2"/><circle cx="16" cy="16" r="4.2" fill="#ff7a3d"/></svg><span>SHUKRA</span></a>
+  <nav aria-label="Sections" id="sections"><a href="#features">What it does</a><a href="#programs">Programs</a><a href="#limits">Limits</a><a href="#how">How it fits</a><a href="#quickstart">Quickstart</a><a href="#license">License</a><a href="#support">Support</a></nav>
+  <div class="bar-actions">
+    <button id="theme" class="icon" type="button" aria-label="Switch to dark mode" aria-pressed="false"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+    <a class="btn small" href="https://github.com/zyvorai/zyvor-shukra">GitHub</a>
+    <a class="btn small primary" href="#quickstart">Quickstart</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-h">
+    <div>
+      <p class="kicker">Zyvor · KVM runtime intelligence</p>
+      <h1 id="hero-h">Every VM, from outside. <em>No agent in the guest.</em></h1>
+      <p class="lede">Shukra sits on the hypervisor and watches every QEMU/KVM workload with eBPF. The daemon joins kernel traces to the QEMU process and gives an operator a console and a CLI that say <strong>what they know, how they know it, and what they cannot see.</strong> Observe. Protect. Explain.</p>
+      <p class="cta"><a class="btn primary" href="#quickstart">Quickstart</a><a class="btn" href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/tutorials/README.md">Tutorials</a><a class="link" href="https://github.com/zyvorai/zyvor-shukra">Source on GitHub</a></p>
+      <ul class="chips" aria-label="Facts"><li class="ok">Apache-2.0</li><li>Go 1.27+</li><li>Linux 6.6+ for the tap</li><li>x86_64 and arm64</li></ul>
+    </div>
+    <div class="term" role="group" aria-label="Quickstart commands">
+      <div class="term-head"><i></i><i></i><i></i><span>shukractl</span></div>
+<pre><code><span class="p">$</span> make build &amp;&amp; make web
+<span class="p">$</span> ./bin/shukrad -listen 127.0.0.1:30970 -web web/dist
+<span class="p">$</span> ./bin/shukractl status
+<span class="c"># why is this VM slow right now?</span>
+<span class="p">$</span> shukractl explain &lt;vm&gt;
+<span class="c"># and why was it slow at 03:12?</span>
+<span class="p">$</span> shukractl explain &lt;vm&gt; --at -3h<span class="cur"></span></code></pre>
+    </div>
+  </section>
+
+  <section class="band" aria-label="At a glance">
+    <div><b>8 eBPF programs</b><span>kvm, sched, block, net, mem, tap, drops, vmm.</span></div>
+    <div><b>35 attach points</b><span>Hot paths stay in maps; rings only carry discrete events.</span></div>
+    <div><b>0 agents in the guest</b><span>It never runs inside a guest and never reads what a guest says to the world.</span></div>
+    <div><b>Never invents a counter</b><span>A program that cannot measure reports detached, with the reason.</span></div>
+  </section>
+
+  <section id="features" aria-labelledby="features-h">
+    <h2 id="features-h">What it answers</h2>
+    <p class="sub">Each card is a question an operator asks and the command that answers it, from the README.</p>
+    <div class="grid">
+      <article class="card"><h3>Why is this VM slow?</h3><p><code>shukractl explain</code> ranks host-side causes over the last minute, with evidence, and lists what Shukra cannot see. <code>no_host_cause</code> says the cause may be inside the guest.</p></article>
+      <article class="card"><h3>Why <em>was</em> it slow?</h3><p><code>explain --at</code> gives a verdict for a past moment from snapshots stored every 5 minutes, and says how coarse it is. <code>shukractl incident</code> writes a bundle for the ticket.</p></article>
+      <article class="card"><h3>Who is the noisy neighbour?</h3><p>vCPU preemption and contention: who took whose CPU, per victim, and what that VM was doing meanwhile.</p></article>
+      <article class="card"><h3>Is each VM the right size?</h3><p><code>shukractl advise</code> flags VMs with more vCPUs than they use or that want CPU and are not getting it. Advice for a person, never an action.</p></article>
+      <article class="card"><h3>What is a VM connecting to?</h3><p>Connects, new UDP flows, inbound peers, DNS query names and TLS server names, seen on the VM's own tap. Each has a switch to turn it off.</p></article>
+      <article class="card"><h3>Where did the packets die?</h3><p>The kernel's own drop reasons on each tap, with Shukra's isolation drops subtracted, so another dataplane or a guest not reading its NIC is named.</p></article>
+      <article class="card"><h3>Is a VMM misbehaving?</h3><p>Tripwires on QEMU and what it starts: sensitive file opens, <code>ptrace</code>, <code>mount</code>, <code>setns</code>, module and kexec loads. A steady-state VMM does none.</p></article>
+      <article class="card"><h3>Where may a VM connect?</h3><p>Learned baselines and egress policy: audit first, then enforce with a confirm timer. The management network can never be cut off.</p></article>
+      <article class="card"><h3>Is Shukra itself safe?</h3><p><code>shukractl doctor</code> audits exposure, what is attached and what it cannot see, worst first and each with a fix.</p></article>
+    </div>
+  </section>
+
+  <section id="programs" aria-labelledby="programs-h">
+    <h2 id="programs-h">Eight programs</h2>
+    <p class="sub">Hot paths stay in maps. The ring buffer is only for discrete events, and events a guest can cause are rate-limited on their own budgets. Details in <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/signals.md">What each program measures</a>.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Program</th><th scope="col">Hooks</th><th scope="col">What it records</th></tr></thead>
+      <tbody>
+        <tr><td><code>kvm</code></td><td><code>kvm_exit</code>, <code>kvm_entry</code>, <code>kvm_mmio</code>, <code>kvm_pio</code></td><td>Exit counts by reason and exit handling time</td></tr>
+        <tr><td><code>sched</code></td><td>wakeup, switch, exec, exit</td><td>On-CPU time, run-queue delay per thread, vCPU preemption and who had the CPU</td></tr>
+        <tr><td><code>block</code></td><td><code>block_rq_insert</code>, <code>block_rq_issue</code>, <code>block_rq_complete</code></td><td>Service-time and queue-time histograms, requests, bytes, errors</td></tr>
+        <tr><td><code>net</code></td><td><code>tcp_v4_connect</code>, <code>tcp_v6_connect</code>, sampled <code>tcp_retransmit_skb</code></td><td>Connect counts and retransmit samples of the QEMU process's sockets</td></tr>
+        <tr><td><code>mem</code></td><td>direct reclaim begin and end, <code>oom/mark_victim</code></td><td>Reclaim stalls and OOM kills of the VMM process</td></tr>
+        <tr><td><code>tap</code></td><td>TCX ingress and egress on each VM tap (Linux 6.6+)</td><td>The guest's own traffic, handshake outcomes, isolation and egress policy</td></tr>
+        <tr><td><code>drops</code></td><td><code>skb:kfree_skb</code> on each VM tap (Linux 5.17+)</td><td>What the kernel dropped on the tap, and why</td></tr>
+        <tr><td><code>vmm</code></td><td>open and sensitive-call syscall tracepoints, fork and exit</td><td>Files a QEMU process, or anything it started, opened; sensitive calls it made</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section id="limits" aria-labelledby="limits-h">
+    <h2 id="limits-h">What it does not do</h2>
+    <p class="sub">The README says to read this before trusting it with anything. The full list is in <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/what-it-does-not-do.md">docs/what-it-does-not-do.md</a>.</p>
+    <div class="grid two">
+      <article class="card"><h3>Host TCP is QEMU's, not the guest's</h3><p>Connect events from the host are attributed to the QEMU process and are not guest-attributed. Only events seen on a VM's tap are.</p></article>
+      <article class="card"><h3>No application data</h3><p>It reads four things beyond headers, each with a switch: plain DNS query names, the first TLS ClientHello segment, names of files QEMU opens (never contents), and process names.</p></article>
+      <article class="card"><h3>Isolation is conditional</h3><p><code>shukractl isolate</code> drops a VM's tap traffic only with an explicit management allow list, on Linux 6.6 or newer. Without an allow list it is refused.</p></article>
+      <article class="card"><h3>Nothing acts unless you turn it on</h3><p>Responses, egress policy and baselines are off until configured. A response can only isolate a VM, and by default it only proposes.</p></article>
+      <article class="card"><h3>A VM it cannot see says so</h3><p>User-mode networking has no tap, and <code>doctor</code> names it. Percentiles can read up to 2x high because they come from log2 buckets.</p></article>
+      <article class="card"><h3>Past verdicts are coarse</h3><p><code>explain --at</code> and <code>incident</code> read snapshots taken every 5 minutes, and say so when nothing is stored.</p></article>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-h">
+    <h2 id="how-h">How it fits</h2>
+    <p class="sub">Shukra is one privileged daemon on the hypervisor, a CLI and a console that only talk to its API, and eight eBPF programs. It is a systemd unit on the hypervisor, not a Helm chart: eBPF has to run where the VMs run.</p>
+    <figure class="diagram">
+<svg viewBox="0 0 1000 565" role="img" aria-labelledby="dg-t dg-d"><title id="dg-t">Shukra architecture</title><desc id="dg-d">On the hypervisor, VMM processes are observed by eight eBPF programs. The shukrad daemon reads their maps and rings and serves an authenticated API to shukractl, the console and Prometheus, and pushes alerts to sinks.</desc><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="dg-arrow" d="M0 0 10 5 0 10z"/></marker><marker id="ahs" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="dg-arrow" d="M0 0 10 5 0 10z"/></marker></defs>
+<rect class="dg-zone" x="20" y="14" width="960" height="386" rx="18"/>
+<text class="dg-z" x="38" y="36">HYPERVISOR</text>
+<rect class="dg-box" x="40" y="60" width="210" height="300" rx="12"/>
+<text class="dg-t" x="145.0" y="168" text-anchor="middle">VMM processes</text>
+<text class="dg-s" x="145.0" y="187" text-anchor="middle">qemu, cloud-hypervisor,</text>
+<text class="dg-s" x="145.0" y="203" text-anchor="middle">firecracker,</text>
+<text class="dg-s" x="145.0" y="219" text-anchor="middle">fluxvm-hypervisor</text>
+<text class="dg-s" x="145.0" y="235" text-anchor="middle"></text>
+<text class="dg-s" x="145.0" y="251" text-anchor="middle">Guests untouched:</text>
+<text class="dg-s" x="145.0" y="267" text-anchor="middle">nothing runs inside them</text>
+<rect class="dg-box" x="330" y="60" width="300" height="140" rx="12"/>
+<text class="dg-t" x="480.0" y="112" text-anchor="middle">kvm · sched · block · net · mem · vmm</text>
+<text class="dg-s" x="480.0" y="131" text-anchor="middle">Tracepoints and kprobes on VMM threads,</text>
+<text class="dg-s" x="480.0" y="147" text-anchor="middle">block I/O, sockets and syscalls</text>
+<text class="dg-s" x="480.0" y="163" text-anchor="middle">maps, and small rings for events</text>
+<rect class="dg-box" x="330" y="230" width="300" height="130" rx="12"/>
+<text class="dg-t" x="480.0" y="277" text-anchor="middle">tap · drops</text>
+<text class="dg-s" x="480.0" y="296" text-anchor="middle">TCX on each VM tap or host veth vh*</text>
+<text class="dg-s" x="480.0" y="312" text-anchor="middle">(Linux 6.6+); skb:kfree_skb (5.17+)</text>
+<text class="dg-s" x="480.0" y="328" text-anchor="middle">maps, rings, pinned in bpffs</text>
+<rect class="dg-hi" x="720" y="60" width="240" height="300" rx="12"/>
+<text class="dg-t" x="840.0" y="144" text-anchor="middle">shukrad</text>
+<text class="dg-s" x="840.0" y="163" text-anchor="middle">Identity scan, sampler,</text>
+<text class="dg-s" x="840.0" y="179" text-anchor="middle">ring readers, rules,</text>
+<text class="dg-s" x="840.0" y="195" text-anchor="middle">responses, state,</text>
+<text class="dg-s" x="840.0" y="211" text-anchor="middle">persistence</text>
+<text class="dg-s" x="840.0" y="227" text-anchor="middle"></text>
+<text class="dg-s" x="840.0" y="243" text-anchor="middle">Reads maps every 2 s,</text>
+<text class="dg-s" x="840.0" y="259" text-anchor="middle">rings as they fill</text>
+<text class="dg-s" x="840.0" y="275" text-anchor="middle"></text>
+<text class="dg-s" x="840.0" y="291" text-anchor="middle">API on :30970</text>
+<path class="dg-line" d="M250 130 L330 130" marker-end="url(#ah)"/>
+<path class="dg-line" d="M250 295 L330 295" marker-end="url(#ah)"/>
+<path class="dg-line" d="M630 130 L720 130" marker-end="url(#ah)"/>
+<path class="dg-line" d="M630 295 L720 295" marker-end="url(#ah)"/>
+<path class="dg-line" d="M790 360 L790 430"/>
+<path class="dg-line" d="M135 430 L790 430"/>
+<path class="dg-line" d="M135 430 L135 472" marker-end="url(#ah)"/>
+<path class="dg-line" d="M380 430 L380 472" marker-end="url(#ah)"/>
+<path class="dg-line" d="M625 430 L625 472" marker-end="url(#ah)"/>
+<path class="dg-line" d="M900 360 L900 472" marker-end="url(#ah)"/>
+<text class="dg-lbl" x="150" y="452" text-anchor="start">bearer key, HTTP or HTTPS</text>
+<text class="dg-lbl" x="912" y="424" text-anchor="start">pushed</text>
+<rect class="dg-box" x="40" y="472" width="190" height="70" rx="12"/>
+<text class="dg-t" x="135.0" y="497" text-anchor="middle">shukractl</text>
+<text class="dg-s" x="135.0" y="516" text-anchor="middle">CLI, API only,</text>
+<text class="dg-s" x="135.0" y="532" text-anchor="middle">never loads BPF</text>
+<rect class="dg-box" x="285" y="472" width="190" height="70" rx="12"/>
+<text class="dg-t" x="380.0" y="497" text-anchor="middle">Console</text>
+<text class="dg-s" x="380.0" y="516" text-anchor="middle">served by shukrad</text>
+<text class="dg-s" x="380.0" y="532" text-anchor="middle">http://host:30970</text>
+<rect class="dg-box" x="530" y="472" width="190" height="70" rx="12"/>
+<text class="dg-t" x="625.0" y="505" text-anchor="middle">Prometheus</text>
+<text class="dg-s" x="625.0" y="524" text-anchor="middle">scrapes the API</text>
+<rect class="dg-box" x="805" y="472" width="190" height="70" rx="12"/>
+<text class="dg-t" x="900.0" y="497" text-anchor="middle">Alert sinks</text>
+<text class="dg-s" x="900.0" y="516" text-anchor="middle">webhook, syslog,</text>
+<text class="dg-s" x="900.0" y="532" text-anchor="middle">or a JSONL file</text>
+</svg>
+<figcaption>Observe from outside, answer from the host. Source: README and <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/architecture.md">docs/architecture.md</a>.</figcaption></figure>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">To get</th><th scope="col">You need</th></tr></thead>
+      <tbody>
+        <tr><td>The daemon, CLI and API</td><td>Go 1.27+ to build, or a release tarball or <code>.deb</code>. Runs anywhere; programs are detached without BPF</td></tr>
+        <tr><td>The console</td><td>Node 22 to build it</td></tr>
+        <tr><td><code>kvm</code>, <code>sched</code>, <code>block</code>, <code>net</code>, <code>vmm</code></td><td>Linux with kernel BTF and <code>CAP_BPF</code> (5.8+)</td></tr>
+        <tr><td><code>drops</code></td><td>Linux 5.17+</td></tr>
+        <tr><td><code>tap</code>, guest traffic, egress policy, isolation</td><td>Linux 6.6+ (TCX) and <code>CAP_NET_ADMIN</code></td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section id="quickstart" aria-labelledby="quickstart-h">
+    <h2 id="quickstart-h">Quickstart</h2>
+    <p class="sub">Go 1.27+ and Node 22 for the console.</p>
+    <div class="code"><button class="copy" type="button" aria-label="Copy the quickstart commands">Copy</button>
+<pre><code>make build
+make web
+./bin/shukrad -listen 127.0.0.1:30970 -web web/dist
+./bin/shukractl status</code></pre></div>
+    <p class="sub">If <code>SHUKRA_API_KEY</code> is unset, the daemon uses the dev token <code>shukra</code> and says so on stderr. Open <code>http://127.0.0.1:30970</code> and sign in with that token. On a Mac, or any host without BTF, programs stay detached; VM discovery from <code>/proc</code> still works. To attach traces you need Linux, clang, bpftool and kernel BTF: see <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/tutorials/02-attach-traces.md">Attach traces</a>.</p>
+    <p class="sub">Deploy to a hypervisor over SSH (it builds on the host and starts <code>shukra.service</code>):</p>
+    <div class="code"><button class="copy" type="button" aria-label="Copy the deploy command">Copy</button>
+<pre><code>./scripts/deploy-remote.sh 10.0.1.5 sus</code></pre></div>
+    <p class="sub">Next: <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/getting-started.md">Getting started</a>, <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/what-it-answers.md">all fifteen questions</a>, <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/doctor.md">Doctor</a>.</p>
+  </section>
+
+  <section id="license" aria-labelledby="license-h">
+    <h2 id="license-h">License</h2>
+    <p class="sub">Shukra is free and open source under the <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/LICENSE">Apache License 2.0</a>. Copyright 2026 Zyvor. What it reads, what it can do, and what a hostile guest can do to it: <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+  </section>
+
+  <section id="support" aria-labelledby="support-h">
+    <div class="support">
+      <h2 id="support-h">Support the project</h2>
+      <p class="sub">Free under Apache-2.0. If it helps you, you can donate any amount you like: <a href="https://rzp.io/rzp/utwdYh3" rel="noopener">https://rzp.io/rzp/utwdYh3</a>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: <a href="mailto:sales@zyvor.dev">sales@zyvor.dev</a>.</p>
+      <p class="cta"><a class="btn primary" href="https://rzp.io/rzp/utwdYh3" rel="noopener">Donate any amount</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p><b>Shukra</b> · © 2026 Zyvor AI Labs Private Limited · <a href="https://zyvor.dev">zyvor.dev</a> · Apache-2.0 · <a href="#support">Support</a></p>
+  <p><a href="https://github.com/zyvorai/zyvor-shukra">GitHub</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/tutorials/README.md">Tutorials</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/api.md">API</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/index.md">Docs</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/SECURITY.md">Security</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/CHANGELOG.md">Changelog</a></p>
+</footer>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script src="site.js"></script>
+</body>
+</html>
