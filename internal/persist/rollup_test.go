@@ -187,3 +187,34 @@ func TestAttachGivesTheStateARollupSoAPastVerdictHasSomewhereToLook(t *testing.T
 }
 
 func contains(s, sub string) bool { return strings.Contains(s, sub) }
+
+// A torn line in the middle of the file (a crash, then Log.open ends it and keeps appending) must not hide
+// the snapshots written after it.
+func TestRollupSkipsTornLineInMiddle(t *testing.T) {
+	r := openTest(t, 0)
+	if err := r.Append(snapAt(0, 1)); err != nil {
+		t.Fatal(err)
+	}
+	r.Close()
+	f, err := os.OpenFile(r.path, os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.WriteString(`{"at":"2026-09-20T03:0`)
+	f.Close()
+	l, err := OpenLog(r.path, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.log = l
+	if err := r.Append(snapAt(time.Hour, 2)); err != nil {
+		t.Fatal(err)
+	}
+	cur, _, err := r.Around(r0.Add(2*time.Hour), time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cur == nil || !cur.At.Equal(r0.Add(time.Hour)) {
+		t.Fatalf("snapshot after the torn line not found: %+v", cur)
+	}
+}

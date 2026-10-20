@@ -148,6 +148,9 @@ func (a *Agent) reportUncovered(now time.Time, vms []identity.VM) {
 }
 
 func (a *Agent) recordAttach(now time.Time, vms []identity.VM) {
+	if a.seen == nil {
+		a.seen = map[string]time.Time{}
+	}
 	if a.covered == nil {
 		a.covered = map[string]bool{}
 	}

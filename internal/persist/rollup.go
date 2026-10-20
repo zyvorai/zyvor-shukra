@@ -46,7 +46,7 @@ type place struct {
 }
 
 // scan lists every stored snapshot's time and position, oldest first, path.1 before path. A record that
-// does not decode ends that file: a crash can tear the last line, and nothing after it can be trusted.
+// does not decode (a line torn by a crash) is skipped.
 func (r *Rollup) scan() ([]place, error) {
 	var out []place
 	var rerr error
@@ -59,16 +59,24 @@ func (r *Rollup) scan() ([]place, error) {
 			rerr = err
 			continue
 		}
-		dec := json.NewDecoder(bufio.NewReaderSize(f, 1<<20))
+		// Read line by line: Log.open ends a torn line with a newline and appends after it, so a bad
+		// record in the middle of the file must be skipped, not treated as the end.
+		br := bufio.NewReaderSize(f, 1<<20)
+		var off int64
 		for {
-			off := dec.InputOffset()
-			var head struct {
-				At time.Time `json:"at"`
+			line, err := br.ReadBytes('\n')
+			if len(line) > 0 {
+				var head struct {
+					At time.Time `json:"at"`
+				}
+				if json.Unmarshal(line, &head) == nil {
+					out = append(out, place{at: head.At, file: p, off: off})
+				}
+				off += int64(len(line))
 			}
-			if err := dec.Decode(&head); err != nil {
-				break // the end of the file, or a torn last line: nothing after it can be trusted
+			if err != nil {
+				break
 			}
-			out = append(out, place{at: head.At, file: p, off: off})
 		}
 		f.Close()
 	}
