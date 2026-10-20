@@ -170,23 +170,29 @@ func WriteJSON(path string, v any) error {
 
 // WriteFileAtomic replaces path with b. It syncs the file and the parent directory.
 func WriteFileAtomic(path string, b []byte) error {
-	tmp := path + ".tmp"
-	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	// A name of its own per call: two writers to the same path (a periodic save and the one at shutdown) must
+	// not write into, or rename away, each other's temp file. CreateTemp makes it 0600.
+	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
 	if err != nil {
 		return err
 	}
+	tmp := f.Name()
 	if _, err := f.Write(b); err != nil {
 		f.Close()
+		os.Remove(tmp)
 		return err
 	}
 	if err := f.Sync(); err != nil {
 		f.Close()
+		os.Remove(tmp)
 		return err
 	}
 	if err := f.Close(); err != nil {
+		os.Remove(tmp)
 		return err
 	}
 	if err := os.Rename(tmp, path); err != nil {
+		os.Remove(tmp)
 		return err
 	}
 	return syncDir(filepath.Dir(path))

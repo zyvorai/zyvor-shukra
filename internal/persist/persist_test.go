@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -249,5 +250,37 @@ func TestReleaseAllRecordsAReleaseSoTheNextStartDoesNotReIsolate(t *testing.T) {
 	// With no trail at all it is a no-op, not an error.
 	if n, err := RecordReleaseAll(t.TempDir(), "x"); err != nil || n != 0 {
 		t.Fatalf("empty dir: %d %v", n, err)
+	}
+}
+
+func TestWriteFileAtomicConcurrentWritersToOnePath(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "baselines.json")
+	var wg sync.WaitGroup
+	errs := make(chan error, 64)
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			body := []byte(strings.Repeat(string(rune('a'+i)), 64<<10))
+			for j := 0; j < 20; j++ {
+				if err := WriteFileAtomic(path, body); err != nil {
+					errs <- err
+					return
+				}
+			}
+		}(i)
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(path)
+	if err != nil || len(b) != 64<<10 || strings.Trim(string(b), string(b[:1])) != "" {
+		t.Fatalf("file is not one writer's whole content: %d bytes, %v", len(b), err)
+	}
+	left, _ := filepath.Glob(path + "*.tmp")
+	if len(left) != 0 {
+		t.Fatalf("temp files left behind: %v", left)
 	}
 }
