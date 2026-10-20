@@ -80,3 +80,12 @@ func TestDecodeRingRejectsTheOldSize(t *testing.T) {
 		t.Fatal("a 56-byte record from the previous layout was accepted")
 	}
 }
+
+func TestCStringIsPrintableAndStopsAtNUL(t *testing.T) {
+	if got := cString([]byte("bash\x00junk")); got != "bash" {
+		t.Fatalf("got %q", got)
+	}
+	if got := cString([]byte("a\nb\x1b[31m\xffz\x00")); got != "a?b?[31m?z" {
+		t.Fatalf("got %q", got)
+	}
+}

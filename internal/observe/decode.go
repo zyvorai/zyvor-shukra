@@ -76,5 +76,6 @@ func cString(b []byte) string {
 	if i := strings.IndexByte(string(b), 0); i >= 0 {
 		b = b[:i]
 	}
-	return string(b)
+	// comm is set by the process itself and reaches syslog, webhooks and terminals: printable ASCII only.
+	return printablePath(b)
 }
