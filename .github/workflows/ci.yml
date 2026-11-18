@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # the eBPF integration tests fail on the 7.0 kernel of 26.04 (VMM tripwires see nothing)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -24,6 +24,8 @@ jobs:
           sudo apt-get install -y clang-18 llvm-18 libbpf-dev linux-tools-common linux-tools-generic
           ver="$(uname -r)"
           sudo apt-get install -y "linux-tools-${ver}" || true
+          # Ubuntu 26.04 ships bpftool as its own package and no longer under /usr/lib/linux-tools*.
+          sudo apt-get install -y bpftool || true
           clang_bin="$(command -v clang-18 || true)"
           strip_bin="$(command -v llvm-strip-18 || true)"
           if [ -z "$strip_bin" ] && [ -x /usr/lib/llvm-18/bin/llvm-strip ]; then
@@ -34,6 +36,7 @@ jobs:
             dpkg -L "linux-tools-${ver}" | grep bpftool || true
             real="$(dpkg -L "linux-tools-${ver}" | grep '/bpftool$' | head -1 || true)"
           fi
+          [ -n "$real" ] || real="$(PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH; command -v bpftool || true)"
           echo "clang=$clang_bin strip=$strip_bin bpftool=$real"
           test -n "$clang_bin"
           test -n "$strip_bin"
@@ -64,7 +67,7 @@ jobs:
         run: go vet ./...
       - name: staticcheck
         run: |
-          go install honnef.co/go/tools/cmd/staticcheck@v0.8.1
+          go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
           staticcheck ./...
       - name: govulncheck
         run: |

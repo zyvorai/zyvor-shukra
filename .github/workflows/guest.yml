@@ -85,8 +85,11 @@ jobs:
             qemu-system-x86 qemu-utils cloud-image-utils libvirt-daemon-system libsystemd-dev libhivex-dev parted
           ver="$(uname -r)"
           sudo apt-get install -y "linux-tools-${ver}" || true
+          # Ubuntu 26.04 ships bpftool as its own package and no longer under /usr/lib/linux-tools*.
+          sudo apt-get install -y bpftool || true
           real="$(find /usr/lib/linux-tools /usr/lib/linux-tools-* -name bpftool \( -type f -o -type l \) 2>/dev/null | head -1)"
-          test -n "$real"
+          [ -n "$real" ] || real="$(PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH; command -v bpftool || true)"
+          [ -n "$real" ] || { echo "::error::no bpftool found after installing linux-tools and bpftool"; dpkg -L linux-tools-common | grep -i bpf || true; exit 1; }
           sudo ln -sfn "$(command -v clang-18)" /usr/local/bin/clang
           sudo ln -sfn "$(command -v llvm-strip-18 || echo /usr/lib/llvm-18/bin/llvm-strip)" /usr/local/bin/llvm-strip
           sudo ln -sfn "$real" /usr/local/bin/bpftool

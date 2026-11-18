@@ -38,6 +38,8 @@ jobs:
           sudo apt-get install -y clang-18 llvm-18 libbpf-dev linux-tools-common linux-tools-generic
           ver="$(uname -r)"
           sudo apt-get install -y "linux-tools-${ver}" || true
+          # Ubuntu 26.04 ships bpftool as its own package and no longer under /usr/lib/linux-tools*.
+          sudo apt-get install -y bpftool || true
           clang_bin="$(command -v clang-18 || true)"
           strip_bin="$(command -v llvm-strip-18 || true)"
           if [ -z "$strip_bin" ] && [ -x /usr/lib/llvm-18/bin/llvm-strip ]; then
@@ -47,6 +49,7 @@ jobs:
           if [ -z "$real" ]; then
             real="$(dpkg -L "linux-tools-${ver}" | grep '/bpftool$' | head -1 || true)"
           fi
+          [ -n "$real" ] || real="$(PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH; command -v bpftool || true)"
           test -n "$clang_bin" && test -n "$strip_bin" && test -n "$real"
           sudo ln -sfn "$clang_bin" /usr/local/bin/clang
           sudo ln -sfn "$strip_bin" /usr/local/bin/llvm-strip
