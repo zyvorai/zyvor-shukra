@@ -1,0 +1,174 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { useEffect, useRef, useState } from 'react';
+import type { Theme } from '../theme';
+
+export type Page =
+  | 'overview'
+  | 'vms'
+  | 'recorder'
+  | 'explain'
+  | 'kvm'
+  | 'sched'
+  | 'contention'
+  | 'advice'
+  | 'block'
+  | 'memory'
+  | 'programs'
+  | 'connections'
+  | 'drops'
+  | 'detections'
+  | 'actions'
+  | 'policy'
+  | 'isolate';
+
+type NavLink = { page: Page; label: string; blurb: string };
+type NavGroup = { label: string; page?: Page; children?: NavLink[] };
+
+const groups: NavGroup[] = [
+  { label: 'Overview', page: 'overview' },
+  {
+    label: 'Investigate',
+    children: [
+      { page: 'vms', label: 'Virtual machines', blurb: 'VM identity from the host (QEMU command line, FluxVM store). Not an agent inside the guest.' },
+      { page: 'recorder', label: 'Flight recorder', blurb: 'Bounded per-VM history. Replay the last 60 seconds.' },
+      { page: 'explain', label: 'Explain', blurb: 'Why this VM looks slow, from the counters we actually have.' },
+    ],
+  },
+  {
+    label: 'Diagnostics',
+    children: [
+      { page: 'kvm', label: 'KVM', blurb: 'Exit, entry, MMIO, and PIO counters per QEMU thread group.' },
+      { page: 'sched', label: 'Scheduler', blurb: 'On-CPU time, wakeup delay and vCPU preemption for those threads.' },
+      { page: 'contention', label: 'Contention', blurb: 'Which VM took whose CPU, and what it was doing meanwhile.' },
+      { page: 'advice', label: 'Right-size', blurb: 'Over-provisioned or starved VMs, with the numbers behind it.' },
+      { page: 'block', label: 'Block', blurb: 'Service time, queue time and errors for the QEMU I/O thread.' },
+      { page: 'memory', label: 'Memory', blurb: 'Direct reclaim stalls and OOM kills of the VMM process, not the guest.' },
+      { page: 'programs', label: 'Programs', blurb: 'Attached, detached, or missing. A missing KVM module does not stop the others.' },
+    ],
+  },
+  {
+    label: 'Network',
+    children: [
+      { page: 'connections', label: 'Host connections', blurb: 'The QEMU process\'s connects, and the guest\'s own from its tap.' },
+      { page: 'drops', label: 'Drops', blurb: 'Packets the kernel dropped on VM taps, and whether Shukra dropped them.' },
+    ],
+  },
+  {
+    label: 'Security',
+    children: [
+      { page: 'detections', label: 'Detections', blurb: 'Rule hits: destinations, ports, DNS names, exec and thresholds.' },
+      { page: 'actions', label: 'Actions', blurb: 'Proposed isolations waiting for a decision, and what responses did.' },
+      { page: 'policy', label: 'Egress policy', blurb: 'Which networks each VM may start connections to: audited first, then enforced with a timer that reverts it.' },
+      { page: 'isolate', label: 'Isolate', blurb: 'Cut a VM off except the management network. Needs the tap program and an allow list.' },
+    ],
+  },
+];
+
+const OPEN_DELAY_MS = 120;
+const CLOSE_DELAY_MS = 450;
+
+export default function Nav({
+  page,
+  setPage,
+  theme,
+  onToggleTheme,
+  onLogout,
+}: {
+  page: Page;
+  setPage: (p: Page) => void;
+  theme: Theme;
+  onToggleTheme: () => void;
+  onLogout: () => void;
+}) {
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
+
+  const clearTimers = () => {
+    if (openTimer.current) clearTimeout(openTimer.current);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  };
+  const scheduleOpen = (label: string) => {
+    clearTimers();
+    openTimer.current = setTimeout(() => setOpenGroup(label), OPEN_DELAY_MS);
+  };
+  const scheduleClose = () => {
+    clearTimers();
+    closeTimer.current = setTimeout(() => setOpenGroup(null), CLOSE_DELAY_MS);
+  };
+
+  useEffect(() => () => clearTimers(), []);
+  useEffect(() => {
+    if (!openGroup) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenGroup(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [openGroup]);
+
+  return (
+    <nav className="nav" aria-label="Global" ref={navRef}>
+      <div className="nav-inner">
+        <button type="button" className="brand" onClick={() => setPage('overview')} aria-label="Shukra home">
+          <img src="/zyvor-mark.svg" alt="" className="brand-mark" />
+          Shukra
+        </button>
+        <div className="navlinks">
+          {groups.map((g) =>
+            g.children ? (
+              <div key={g.label} className="navgroup" onMouseEnter={() => scheduleOpen(g.label)} onMouseLeave={scheduleClose}>
+                <button
+                  type="button"
+                  className={g.children.some((c) => c.page === page) ? 'active' : ''}
+                  aria-haspopup="true"
+                  aria-expanded={openGroup === g.label}
+                  onClick={() => setOpenGroup((cur) => (cur === g.label ? null : g.label))}
+                >
+                  {g.label}
+                </button>
+                <div className={`mega-panel${openGroup === g.label ? ' open' : ''}`} role="region" aria-label={g.label}>
+                  <div className="mega-grid">
+                    {g.children.map((c) => (
+                      <button
+                        key={c.page}
+                        type="button"
+                        className={page === c.page ? 'active' : ''}
+                        aria-current={page === c.page ? 'page' : undefined}
+                        onClick={() => {
+                          setPage(c.page);
+                          setOpenGroup(null);
+                        }}
+                      >
+                        <span className="mega-link-label">{c.label}</span>
+                        <span className="mega-link-blurb">{c.blurb}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button key={g.page} type="button" className={page === g.page ? 'active' : ''} onClick={() => setPage(g.page as Page)}>
+                {g.label}
+              </button>
+            ),
+          )}
+        </div>
+        <div className="nav-actions">
+          <button type="button" className="theme-toggle" onClick={onLogout} aria-label="Log out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+              <path d="M15 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8" />
+              <path d="M10 12h11m0 0-3.5-3.5M21 12l-3.5 3.5" />
+            </svg>
+          </button>
+          <button type="button" className="theme-toggle" onClick={onToggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}

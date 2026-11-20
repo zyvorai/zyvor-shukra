@@ -1,0 +1,133 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { useEffect, useState } from 'react';
+import Nav, { type Page } from './components/Nav';
+import PageHero, { type HeroTint } from './components/PageHero';
+import Login from './components/Login';
+import Actions from './pages/Actions';
+import Policy from './pages/Policy';
+import Advice from './pages/Advice';
+import Contention from './pages/Contention';
+import Overview from './pages/Overview';
+import VMs from './pages/VMs';
+import Recorder from './pages/Recorder';
+import Explain from './pages/Explain';
+import { Block, Connections, Drops, KVM, Memory, Programs, Sched } from './pages/Traces';
+import { Detections, Isolate } from './pages/Security';
+import { token, setToken } from './api';
+import { applyTheme, readStoredTheme, toggleTheme, type Theme } from './theme';
+
+const pages: Page[] = ['overview', 'vms', 'recorder', 'explain', 'kvm', 'sched', 'contention', 'advice', 'block', 'memory', 'programs', 'connections', 'drops', 'detections', 'actions', 'policy', 'isolate'];
+
+function readPage(): Page {
+  const m = window.location.hash.match(/page=([a-z]+)/);
+  const id = m?.[1] as Page | undefined;
+  return id && pages.includes(id) ? id : 'overview';
+}
+
+const heroes: Partial<Record<Page, { eyebrow: string; title: string; lede: string; tint?: HeroTint }>> = {
+  vms: { eyebrow: 'Investigate', title: 'Know the virtual machine.', lede: 'Name, UUID and the traced interface come from the host: the QEMU command line, or FluxVM\'s store.', tint: 'green' },
+  recorder: { eyebrow: 'Investigate', title: 'Replay the last minute.', lede: 'A bounded ring per VM. Spikes, not every KVM exit.', tint: 'purple' },
+  explain: { eyebrow: 'Investigate', title: 'Why is this VM slow?', lede: 'Only the evidence this build collected. Missing signals stay listed.', tint: 'amber' },
+  kvm: { eyebrow: 'Diagnostics', title: 'KVM exits, counted.', lede: 'Exit counts, how long the host spends handling them, and which reasons cost the most. Not one event per exit.', tint: 'green' },
+  sched: { eyebrow: 'Diagnostics', title: 'Scheduler delay.', lede: 'On-CPU time and run-queue delay for QEMU threads, which thread is slow, and how long the vCPUs were taken off a host CPU and by whom.', tint: 'amber' },
+  contention: { eyebrow: 'Diagnostics', title: 'Who took whose CPU.', lede: 'Which VM preempted which, how much of a VM\'s preemption it accounts for, and what that VM was doing meanwhile. The host\'s view, not the guest\'s steal counter.', tint: 'red' },
+  advice: { eyebrow: 'Diagnostics', title: 'Right-sized?', lede: 'Idle VMs with more vCPUs than they use, and busy ones that are not getting the CPU they want. Advice for a person, with the numbers and how sure it is.', tint: 'green' },
+  block: { eyebrow: 'Diagnostics', title: 'Block latency.', lede: 'Service time and queue time, requests, bytes, errors and the latency distribution, from the QEMU I/O thread.', tint: 'amber' },
+  memory: { eyebrow: 'Diagnostics', title: 'Host memory pressure.', lede: 'Direct reclaim stalls and OOM kills of the VMM process. Not the guest\'s own memory.', tint: 'amber' },
+  programs: { eyebrow: 'Diagnostics', title: 'What is attached.', lede: 'kvm, sched, block, mem, net, vmm, tap and drops. Detached is an honest state.', tint: 'green' },
+  connections: { eyebrow: 'Network', title: 'Host connections.', lede: "QEMU's own connects, and the guest's own on its tap when the tap program is attached.", tint: 'purple' },
+  drops: { eyebrow: 'Network', title: 'Where packets die.', lede: "What the kernel dropped on each VM's tap and why, with Shukra's own isolation subtracted. Another program dropping traffic shows up here.", tint: 'red' },
+  detections: { eyebrow: 'Security', title: 'New destinations.', lede: 'Rule hits. A detection only notices. Isolating is a separate, deliberate step.', tint: 'red' },
+  actions: { eyebrow: 'Security', title: 'Decide what happens.', lede: 'What responses proposed or did when a detection fired. A proposal changes nothing until a person approves it, and lapses if nobody does.', tint: 'red' },
+  policy: { eyebrow: 'Security', title: 'Where a VM may connect.', lede: 'The networks each VM may start connections to. Audit first: it drops nothing. Enforcing reverts unless someone confirms.', tint: 'red' },
+  isolate: { eyebrow: 'Security', title: 'Hold the VM.', lede: "Drops the VM's tap traffic except your management allow list. Nothing happens until you confirm.", tint: 'red' },
+};
+
+export default function App() {
+  const [page, setPageState] = useState<Page>(readPage);
+  const [loggedIn, setLoggedIn] = useState(() => Boolean(token()));
+  const [authError, setAuthError] = useState('');
+  const [theme, setTheme] = useState<Theme>(() => {
+    const t = readStoredTheme();
+    applyTheme(t);
+    return t;
+  });
+
+  function setPage(p: Page) {
+    window.location.hash = `page=${p}`;
+    setPageState(p);
+  }
+
+  useEffect(() => {
+    const onHash = () => setPageState(readPage());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  useEffect(() => {
+    const onExpired = () => {
+      setAuthError('The daemon rejected the API token.');
+      setLoggedIn(false);
+    };
+    window.addEventListener('shukra-auth-expired', onExpired);
+    return () => window.removeEventListener('shukra-auth-expired', onExpired);
+  }, []);
+
+  if (!loggedIn) {
+    return <Login initialError={authError} onLogin={() => { setAuthError(''); setLoggedIn(true); }} />;
+  }
+
+  const body = {
+    overview: <Overview />,
+    vms: <VMs />,
+    recorder: <Recorder />,
+    explain: <Explain />,
+    kvm: <KVM />,
+    sched: <Sched />,
+    contention: <Contention />,
+    advice: <Advice />,
+    block: <Block />,
+    memory: <Memory />,
+    programs: <Programs />,
+    connections: <Connections />,
+    drops: <Drops />,
+    detections: <Detections />,
+    actions: <Actions />,
+    policy: <Policy />,
+    isolate: <Isolate />,
+  }[page];
+  const hero = heroes[page];
+
+  return (
+    <>
+      <Nav
+        page={page}
+        setPage={setPage}
+        theme={theme}
+        onToggleTheme={() => setTheme((t) => toggleTheme(t))}
+        onLogout={() => {
+          setToken('');
+          setLoggedIn(false);
+        }}
+      />
+      <main>
+        <div key={page}>
+          {page === 'overview' ? (
+            <header className="hero">
+              <div>
+                <p className="eyebrow">SHUKRA · ZYVOR</p>
+                <h1>Shukra.</h1>
+                <p>eBPF-powered runtime intelligence and security for KVM. Observe, protect, and explain every workload from the host.</p>
+              </div>
+            </header>
+          ) : (
+            hero && <PageHero eyebrow={hero.eyebrow} title={hero.title} lede={hero.lede} tint={hero.tint} />
+          )}
+          {body}
+        </div>
+      </main>
+    </>
+  );
+}

@@ -1,0 +1,17 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+package bpf
+
+// Generate CO-RE objects on Linux for the architecture you run this on: go generate
+// sets $GOARCH, and vmlinux.h is dumped from the running kernel's BTF, which is
+// architecture specific. Skipped by `make generate` when clang or BTF is missing.
+//
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem kvm -target $GOARCH -cc clang Kvm kvm.bpf.c -- -I. -O2 -g
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem sched -target $GOARCH -cc clang Sched sched.bpf.c -- -I. -O2 -g
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem block -target $GOARCH -cc clang Block block.bpf.c -- -I. -O2 -g
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem net -target $GOARCH -cc clang Net net.bpf.c -- -I. -O2 -g
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem drops -target $GOARCH -cc clang Drops drops.bpf.c -- -I. -O2 -g
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem tap -target $GOARCH -cc clang Tap tap.bpf.c -- -I. -O2 -g
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem mem -target $GOARCH -cc clang Mem mem.bpf.c -- -I. -O2 -g
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -go-package bpfgen -output-dir ../internal/bpfgen -output-stem vmm -target $GOARCH -cc clang Vmm vmm.bpf.c -- -I. -O2 -g

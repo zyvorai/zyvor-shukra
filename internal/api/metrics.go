@@ -1,0 +1,441 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+package api
+
+import (
+	"fmt"
+	"io"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/zyvorai/shukra/internal/aggregate"
+	"github.com/zyvorai/shukra/internal/state"
+)
+
+var labelEscaper = strings.NewReplacer(`\`, `\\`, `"`, `\"`, "\n", `\n`)
+
+// writeMetrics renders Prometheus text format. A row that is not measured is
+// skipped, so an absent series means "not measured", not zero. VM names come from
+// the QEMU command line and are escaped.
+func writeMetrics(w io.Writer, st *state.State) {
+	s := st.Status()
+	kvm := st.KVM("")
+	sched := st.Sched("")
+	gauge := func(name, help string) {
+		fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s gauge\n", name, help, name)
+	}
+	counter := func(name, help string) {
+		fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s counter\n", name, help, name)
+	}
+	lbl := func(vm string) string { return `vm="` + labelEscaper.Replace(vm) + `"` }
+
+	gauge("shukra_vms", "VMs found in the last scan (QEMU processes, and the VMs a runtime such as fluxvm manages).")
+	fmt.Fprintf(w, "shukra_vms %d\n", s.VMs)
+	gauge("shukra_program_attached", "1 when the eBPF program is attached.")
+	for _, p := range st.Programs() {
+		v := 0
+		if p.Status == "attached" {
+			v = 1
+		}
+		fmt.Fprintf(w, "shukra_program_attached{program=%q} %d\n", p.Name, v)
+	}
+	counter("shukra_events_total", "Discrete events stored since the daemon started.")
+	fmt.Fprintf(w, "shukra_events_total %d\n", st.Seq())
+	fails, _ := st.AuditFailures()
+	counter("shukra_audit_persist_failures_total", "Audit writes that failed since the daemon started. An isolation can succeed while this increases.")
+	fmt.Fprintf(w, "shukra_audit_persist_failures_total %d\n", fails)
+	if attaches := st.TapAttaches(); len(attaches) > 0 {
+		writeAttachHistogram(w, attaches)
+	}
+	gauge("shukra_detections", "Detections currently held in memory.")
+	fmt.Fprintf(w, "shukra_detections %d\n", s.Detections)
+
+	if bv := st.Baselines(); bv != nil && bv.Enabled() {
+		rows := bv.Status("", time.Now().UTC())
+		gauge("shukra_baseline_learning", "1 while a VM's baseline is still in its learning period, when nothing is reported.")
+		for _, r := range rows {
+			l := 0
+			if r.Learning {
+				l = 1
+			}
+			fmt.Fprintf(w, "shukra_baseline_learning{%s} %d\n", lbl(r.VM), l)
+		}
+		gauge("shukra_baseline_items", "What a VM's baseline has learned, by kind.")
+		for _, r := range rows {
+			for _, c := range r.Counts {
+				fmt.Fprintf(w, "shukra_baseline_items{%s,kind=\"%s\"} %d\n", lbl(r.VM), c.Kind, c.Count)
+			}
+		}
+		counter("shukra_baseline_new_total", "First sightings reported after a VM's learning period.")
+		for _, r := range rows {
+			fmt.Fprintf(w, "shukra_baseline_new_total{%s} %d\n", lbl(r.VM), r.Alerts)
+		}
+		counter("shukra_baseline_suppressed_total", "First sightings held back because the VM had used its alerts for the day.")
+		for _, r := range rows {
+			fmt.Fprintf(w, "shukra_baseline_suppressed_total{%s} %d\n", lbl(r.VM), r.Suppressed)
+		}
+	}
+	if av := st.Actions(); av != nil && av.Enabled() {
+		counts := av.Counts()
+		gauge("shukra_actions_pending", "Proposed isolations waiting for a person to approve or reject them.")
+		fmt.Fprintf(w, "shukra_actions_pending %d\n", counts["pending"])
+		gauge("shukra_actions", "What responses decided, held in memory, by status.")
+		for _, s := range []string{"pending", "executed", "executed_audit_degraded", "released", "refused", "rejected", "expired", "dry_run"} {
+			fmt.Fprintf(w, "shukra_actions{status=%q} %d\n", s, counts[s])
+		}
+	}
+	// Egress policy: only for a VM that has one. A VM with no policy has no series, which is not the same as one
+	// that has a policy and has not been tested.
+	if pv := st.Policy(); pv != nil {
+		if rows := pv.List(); len(rows) > 0 {
+			type series struct {
+				name, kind, help string
+				val              func(t state.PolicyTap) uint64
+			}
+			modeOf := func(k string) uint64 {
+				switch k {
+				case "audit":
+					return 1
+				case "enforce":
+					return 2
+				}
+				return 0
+			}
+			gauge("shukra_egress_policy_mode", "The egress policy's mode on a tap as the kernel has it: 0 off, 1 audit, 2 enforce.")
+			for _, r := range rows {
+				for _, t := range r.Taps {
+					fmt.Fprintf(w, "shukra_egress_policy_mode{%s,tap=%q} %d\n", lbl(r.VM), t.Tap, modeOf(t.Kernel))
+				}
+			}
+			gauge("shukra_egress_policy_unconfirmed", "1 while an enforcing policy is waiting to be confirmed, after which it goes back to what it replaced.")
+			for _, r := range rows {
+				v := 0
+				if r.Revert != nil {
+					v = 1
+				}
+				fmt.Fprintf(w, "shukra_egress_policy_unconfirmed{%s} %d\n", lbl(r.VM), v)
+			}
+			for _, x := range []series{
+				{"shukra_egress_checked_total", "counter", "New TCP connections and UDP datagrams the egress policy judged.", func(t state.PolicyTap) uint64 { return t.Checked }},
+				{"shukra_egress_audit_packets_total", "counter", "What the egress policy would have dropped, in audit mode.", func(t state.PolicyTap) uint64 { return t.AuditPkts }},
+				{"shukra_egress_audit_bytes_total", "counter", "The bytes of what the egress policy would have dropped, in audit mode.", func(t state.PolicyTap) uint64 { return t.AuditBytes }},
+				{"shukra_egress_dropped_packets_total", "counter", "What the egress policy dropped, when enforcing.", func(t state.PolicyTap) uint64 { return t.DroppedPkts }},
+				{"shukra_egress_dropped_bytes_total", "counter", "The bytes of what the egress policy dropped, when enforcing.", func(t state.PolicyTap) uint64 { return t.DroppedBytes }},
+			} {
+				counter(x.name, x.help)
+				for _, r := range rows {
+					for _, t := range r.Taps {
+						fmt.Fprintf(w, "%s{%s,tap=%q} %d\n", x.name, lbl(r.VM), t.Tap, x.val(t))
+					}
+				}
+			}
+		}
+	}
+	counter("shukra_detections_suppressed_total", "Detections held back as repeats of one already raised.")
+	fmt.Fprintf(w, "shukra_detections_suppressed_total %d\n", st.Suppressed())
+	if sinks := st.SinkStats(); len(sinks) > 0 {
+		counter("shukra_alert_sent_total", "Detections delivered to an alert sink.")
+		for _, k := range sinks {
+			fmt.Fprintf(w, "shukra_alert_sent_total{sink=%q} %d\n", k.Name, k.Sent)
+		}
+		counter("shukra_alert_failed_total", "Detections an alert sink failed to deliver after retries.")
+		for _, k := range sinks {
+			fmt.Fprintf(w, "shukra_alert_failed_total{sink=%q} %d\n", k.Name, k.Failed)
+		}
+		counter("shukra_alert_dropped_total", "Detections dropped because a sink's queue was full.")
+		for _, k := range sinks {
+			fmt.Fprintf(w, "shukra_alert_dropped_total{sink=%q} %d\n", k.Name, k.Dropped)
+		}
+	}
+
+	counter("shukra_kvm_exits_total", "KVM exits for the QEMU thread group.")
+	for _, r := range kvm {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_kvm_exits_total{%s} %d\n", lbl(r.VM), r.Exits)
+		}
+	}
+	counter("shukra_sched_on_cpu_seconds_total", "On-CPU time of the QEMU thread group.")
+	for _, r := range sched {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_sched_on_cpu_seconds_total{%s} %g\n", lbl(r.VM), float64(r.OnCPUNs)/1e9)
+		}
+	}
+	counter("shukra_sched_wakeup_delay_seconds_total", "Summed wakeup delay of the QEMU thread group.")
+	for _, r := range sched {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_sched_wakeup_delay_seconds_total{%s} %g\n", lbl(r.VM), float64(r.WakeupDelayNs)/1e9)
+		}
+	}
+	counter("shukra_sched_vcpu_preempted_seconds_total", "Time the VM's vCPU threads were runnable but off a host CPU after being preempted. The host's view of losing the CPU, not the guest's steal counter.")
+	for _, r := range sched {
+		if r.Measured && r.VM != aggregate.Host { // the rest of the host has no vCPUs
+			fmt.Fprintf(w, "shukra_sched_vcpu_preempted_seconds_total{%s} %g\n", lbl(r.VM), float64(r.PreemptedNs)/1e9)
+		}
+	}
+	counter("shukra_sched_vcpu_preempted_by_seconds_total", "The same, by who took the CPU: by=\"vm:<name>\" for a thread of a QEMU process, otherwise a command name.")
+	for _, r := range sched {
+		if !r.Measured || r.VM == aggregate.Host {
+			continue
+		}
+		who := append([]aggregate.Preemptor(nil), r.AllPreemptors...)
+		sort.Slice(who, func(i, j int) bool { return who[i].Who < who[j].Who })
+		for _, p := range who {
+			fmt.Fprintf(w, "shukra_sched_vcpu_preempted_by_seconds_total{%s,by=\"%s\"} %g\n", lbl(r.VM), labelEscaper.Replace(p.Who), float64(p.Ns)/1e9)
+		}
+	}
+	block := st.Block("")
+	var readH, writeH []histSeries
+	counter("shukra_block_ops_total", "Completed block requests by the QEMU iothread, not the guest filesystem.")
+	for _, r := range block {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_block_ops_total{%s,op=\"read\"} %d\nshukra_block_ops_total{%s,op=\"write\"} %d\n", lbl(r.VM), r.ReadOps, lbl(r.VM), r.WriteOps)
+			readH = append(readH, histSeries{lbl(r.VM) + `,op="read"`, r.ReadHist})
+			writeH = append(writeH, histSeries{lbl(r.VM) + `,op="write"`, r.WriteHist})
+		}
+	}
+	counter("shukra_block_bytes_total", "Bytes completed by the QEMU iothread, not the guest filesystem.")
+	for _, r := range block {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_block_bytes_total{%s,op=\"read\"} %d\nshukra_block_bytes_total{%s,op=\"write\"} %d\n", lbl(r.VM), r.ReadBytes, lbl(r.VM), r.WriteBytes)
+		}
+	}
+	gauge("shukra_block_latency_max_seconds", "Slowest block request since the daemon attached. Racy across CPUs; it can miss a slightly smaller maximum.")
+	for _, r := range block {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_block_latency_max_seconds{%s,op=\"read\"} %g\nshukra_block_latency_max_seconds{%s,op=\"write\"} %g\n",
+				lbl(r.VM), float64(r.ReadMaxNs)/1e9, lbl(r.VM), float64(r.WriteMaxNs)/1e9)
+		}
+	}
+	writeHistograms(w, "shukra_block_latency_seconds", "Block request service time, from issue to completion, on the QEMU iothread.", append(readH, writeH...))
+	var qRead, qWrite []histSeries
+	counter("shukra_block_errors_total", "Block requests that completed with a non-zero status.")
+	for _, r := range block {
+		if !r.Measured {
+			continue
+		}
+		fmt.Fprintf(w, "shukra_block_errors_total{%s,op=\"read\"} %d\nshukra_block_errors_total{%s,op=\"write\"} %d\n", lbl(r.VM), r.ReadErrors, lbl(r.VM), r.WriteErrors)
+		qRead = append(qRead, histSeries{lbl(r.VM) + `,op="read"`, r.QueueReadHist})
+		qWrite = append(qWrite, histSeries{lbl(r.VM) + `,op="write"`, r.QueueWriteHist})
+	}
+	writeHistograms(w, "shukra_block_queue_seconds", "Time a request sat in the host queue before the device took it.", append(qRead, qWrite...))
+	mem := st.Memory("")
+	counter("shukra_reclaim_stalls_total", "Direct reclaim stalls in the VMM process, not inside the guest.")
+	for _, r := range mem {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_reclaim_stalls_total{%s} %d\n", lbl(r.VM), r.ReclaimCount)
+		}
+	}
+	counter("shukra_reclaim_seconds_total", "Time spent in direct reclaim by the VMM process.")
+	for _, r := range mem {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_reclaim_seconds_total{%s} %g\n", lbl(r.VM), float64(r.ReclaimNs)/1e9)
+		}
+	}
+	var reclaimH []histSeries
+	for _, r := range mem {
+		if r.Measured {
+			reclaimH = append(reclaimH, histSeries{lbl(r.VM), r.ReclaimHist})
+		}
+	}
+	writeHistograms(w, "shukra_reclaim_seconds", "Direct reclaim stall time in the VMM process.", reclaimH)
+	counter("shukra_oom_kills_total", "OOM kills of a VMM process.")
+	for _, r := range mem {
+		if r.Measured {
+			fmt.Fprintf(w, "shukra_oom_kills_total{%s} %d\n", lbl(r.VM), r.OOMKills)
+		}
+	}
+
+	var rq []histSeries
+	for _, r := range sched {
+		if r.Measured && len(r.WakeupHist) > 0 {
+			rq = append(rq, histSeries{lbl(r.VM), r.WakeupHist})
+		}
+	}
+	writeHistograms(w, "shukra_sched_runqueue_delay_seconds", "Delay from wakeup to running for the QEMU threads.", rq)
+
+	var kl []histSeries
+	counter("shukra_kvm_exits_by_reason_total", "KVM exits by reason. name is set only where the numbering is known for this CPU.")
+	for _, r := range kvm {
+		if !r.Measured {
+			continue
+		}
+		if len(r.LatencyHist) > 0 {
+			kl = append(kl, histSeries{lbl(r.VM), r.LatencyHist})
+		}
+		for _, re := range r.AllReasons {
+			fmt.Fprintf(w, "shukra_kvm_exits_by_reason_total{%s} %d\n", reasonLabels(r.VM, re), re.Count)
+		}
+	}
+	counter("shukra_kvm_exit_handling_seconds_total", "Host time spent handling KVM exits by reason. For a halt this is guest idle time.")
+	for _, r := range kvm {
+		if !r.Measured {
+			continue
+		}
+		for _, re := range r.AllReasons {
+			if re.TotalNs > 0 {
+				fmt.Fprintf(w, "shukra_kvm_exit_handling_seconds_total{%s} %g\n", reasonLabels(r.VM, re), float64(re.TotalNs)/1e9)
+			}
+		}
+	}
+	writeHistograms(w, "shukra_kvm_exit_latency_seconds", "KVM exit handling time, kvm_exit to the next kvm_entry. Halts are excluded.", kl)
+
+	taps := st.Taps("")
+	if len(taps) > 0 {
+		counter("shukra_tap_bytes_total", "Bytes on a VM tap, from the guest's point of view. This is the guest's own traffic.")
+		for _, t := range taps {
+			fmt.Fprintf(w, "shukra_tap_bytes_total{%s,tap=%q,direction=\"from_guest\"} %d\nshukra_tap_bytes_total{%s,tap=%q,direction=\"to_guest\"} %d\n",
+				lbl(t.VM), t.Tap, t.FromBytes, lbl(t.VM), t.Tap, t.ToBytes)
+		}
+		counter("shukra_tap_packets_total", "Packets on a VM tap, from the guest's point of view.")
+		for _, t := range taps {
+			fmt.Fprintf(w, "shukra_tap_packets_total{%s,tap=%q,direction=\"from_guest\"} %d\nshukra_tap_packets_total{%s,tap=%q,direction=\"to_guest\"} %d\n",
+				lbl(t.VM), t.Tap, t.FromPkts, lbl(t.VM), t.Tap, t.ToPkts)
+		}
+		counter("shukra_tap_dropped_packets_total", "Packets Shukra dropped on a VM tap: isolation, and an enforcing egress policy.")
+		for _, t := range taps {
+			fmt.Fprintf(w, "shukra_tap_dropped_packets_total{%s,tap=%q} %d\n", lbl(t.VM), t.Tap, t.DroppedPkts)
+		}
+		// What became of the TCP handshakes. direction=out is the guest's own connections, in is made to it.
+		counter("shukra_tap_connect_attempts_total", "New TCP connection attempts seen on a VM tap. A repeat of the same SYN is a retransmit, not a new attempt.")
+		for _, t := range taps {
+			fmt.Fprintf(w, "shukra_tap_connect_attempts_total{%s,tap=%q,direction=\"out\"} %d\nshukra_tap_connect_attempts_total{%s,tap=%q,direction=\"in\"} %d\n",
+				lbl(t.VM), t.Tap, t.OutSyn, lbl(t.VM), t.Tap, t.InSyn)
+		}
+		counter("shukra_tap_connect_outcomes_total", "What became of them: accepted (SYN-ACK), refused (RST), timed_out or ignored (never answered), or blocked (dropped by isolation).")
+		for _, t := range taps {
+			for _, o := range []struct {
+				dir, result string
+				n           uint64
+			}{
+				{"out", "accepted", t.OutOK}, {"out", "refused", t.OutRefused}, {"out", "timed_out", t.OutTimeout}, {"out", "blocked", t.OutBlocked},
+				{"in", "accepted", t.InOK}, {"in", "refused", t.InRefused}, {"in", "ignored", t.InIgnored}, {"in", "blocked", t.InBlocked},
+			} {
+				fmt.Fprintf(w, "shukra_tap_connect_outcomes_total{%s,tap=%q,direction=%q,result=%q} %d\n", lbl(t.VM), t.Tap, o.dir, o.result, o.n)
+			}
+		}
+		counter("shukra_tap_connect_retransmits_total", "SYNs repeated on a connection that had not been answered yet.")
+		for _, t := range taps {
+			fmt.Fprintf(w, "shukra_tap_connect_retransmits_total{%s,tap=%q,direction=\"out\"} %d\nshukra_tap_connect_retransmits_total{%s,tap=%q,direction=\"in\"} %d\n",
+				lbl(t.VM), t.Tap, t.OutRetrans, lbl(t.VM), t.Tap, t.InRetrans)
+		}
+		var hs []histSeries
+		for _, t := range taps {
+			if len(t.HandshakeHist) > 0 {
+				hs = append(hs, histSeries{lbl(t.VM) + fmt.Sprintf(",tap=%q", t.Tap), t.HandshakeHist})
+			}
+		}
+		writeHistograms(w, "shukra_tap_handshake_seconds", "How long the guest's outbound TCP connections took to be answered, SYN to SYN-ACK, seen on the tap.", hs)
+		gauge("shukra_tap_isolated", "1 while the VM tap is isolated.")
+		for _, t := range taps {
+			v := 0
+			if t.Isolated {
+				v = 1
+			}
+			fmt.Fprintf(w, "shukra_tap_isolated{%s,tap=%q} %d\n", lbl(t.VM), t.Tap, v)
+		}
+	}
+	// Only while the drops program is measuring: a VM it cannot see has no series, never a zero. The
+	// per-reason counts only grow, so this is a counter. What is Shukra's and what is not is a difference
+	// of two counters read a moment apart, which can dip, so it is served on the API and not here.
+	if drops, _ := st.Drops(""); len(drops) > 0 {
+		counter("shukra_tap_kernel_drops_total", "Packets the kernel dropped on a VM tap, by the kernel's own reason. Shukra's isolation drops appear here as TC_INGRESS or TC_EGRESS.")
+		for _, d := range drops {
+			fmt.Fprintf(w, "shukra_tap_kernel_drops_total{%s,tap=%q,reason=%q} %d\n", lbl(d.VM), d.Tap, d.Reason, d.Count)
+		}
+	}
+	net := st.Net("")
+	counter("shukra_tcp_connects_total", "tcp_v4_connect from the QEMU process. Not guest traffic.")
+	for _, r := range net {
+		fmt.Fprintf(w, "shukra_tcp_connects_total{%s} %d\n", lbl(r.VM), r.Connects)
+	}
+	counter("shukra_tcp_retransmits_total", "tcp_retransmit_skb from the QEMU process. Not guest traffic.")
+	for _, r := range net {
+		fmt.Fprintf(w, "shukra_tcp_retransmits_total{%s} %d\n", lbl(r.VM), r.Retransmits)
+	}
+}
+
+func reasonLabels(vm string, r aggregate.Reason) string {
+	l := `vm="` + labelEscaper.Replace(vm) + `",reason="` + strconv.FormatUint(uint64(r.Reason), 10) + `"`
+	if r.Name != "" {
+		l += `,name="` + r.Name + `"`
+	}
+	return l
+}
+
+type histSeries struct {
+	labels string
+	counts []uint64 // log2 ns buckets, as in internal/hist
+}
+
+// The kernel histograms are log2 buckets, bucket i covering up to 2^(i+1) ns.
+// Everything below firstLE is folded into the first bucket. The set of le values
+// is fixed so a series keeps the same buckets from scrape to scrape.
+const (
+	firstLE = 6  // le = 2^7 ns
+	lastLE  = 36 // le = 2^37 ns, about 137 s. Anything slower is only in +Inf
+)
+
+// writeHistograms renders cumulative Prometheus histograms so histogram_quantile
+// over rate() gives windowed percentiles. There is no _sum: the kernel keeps
+// buckets, not a total, and one made up from bucket midpoints would be invented.
+func writeHistograms(w io.Writer, name, help string, series []histSeries) {
+	if len(series) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s histogram\n", name, help, name)
+	for _, s := range series {
+		var total uint64
+		for _, c := range s.counts {
+			total += c
+		}
+		var cum uint64
+		for i := 0; i <= lastLE && i < len(s.counts); i++ {
+			cum += s.counts[i]
+			if i >= firstLE {
+				le := float64(uint64(1)<<(i+1)) / 1e9
+				fmt.Fprintf(w, "%s_bucket{%s,le=\"%s\"} %d\n", name, s.labels, strconv.FormatFloat(le, 'g', -1, 64), cum)
+			}
+		}
+		fmt.Fprintf(w, "%s_bucket{%s,le=\"+Inf\"} %d\n%s_count{%s} %d\n", name, s.labels, total, name, s.labels, total)
+	}
+}
+
+// Attach latency is a userspace duration, so the buckets are seconds rather than
+// the kernel's log2 nanosecond histogram.
+var attachBuckets = []float64{0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5}
+
+func writeAttachHistogram(w io.Writer, obs []state.TapAttachObs) {
+	byVM := map[string][]float64{}
+	var order []string
+	for _, o := range obs {
+		if _, ok := byVM[o.VM]; !ok {
+			order = append(order, o.VM)
+		}
+		byVM[o.VM] = append(byVM[o.VM], o.Seconds)
+	}
+	sort.Strings(order)
+	fmt.Fprintf(w, "# HELP shukra_tap_attach_seconds Seconds from first sight of a tap to the program and its saved policy.\n# TYPE shukra_tap_attach_seconds histogram\n")
+	for _, vm := range order {
+		samples := byVM[vm]
+		lbl := `vm="` + labelEscaper.Replace(vm) + `"`
+		var sum float64
+		for _, s := range samples {
+			sum += s
+		}
+		for _, le := range attachBuckets {
+			var n int
+			for _, s := range samples {
+				if s <= le {
+					n++
+				}
+			}
+			fmt.Fprintf(w, "shukra_tap_attach_seconds_bucket{%s,le=\"%s\"} %d\n", lbl, strconv.FormatFloat(le, 'g', -1, 64), n)
+		}
+		fmt.Fprintf(w, "shukra_tap_attach_seconds_bucket{%s,le=\"+Inf\"} %d\n", lbl, len(samples))
+		fmt.Fprintf(w, "shukra_tap_attach_seconds_sum{%s} %s\n", lbl, strconv.FormatFloat(sum, 'g', -1, 64))
+		fmt.Fprintf(w, "shukra_tap_attach_seconds_count{%s} %d\n", lbl, len(samples))
+	}
+}
