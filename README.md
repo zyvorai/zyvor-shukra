@@ -139,7 +139,7 @@ How identity, the tap program, history windows and detection fit together is in 
 | CLI | `shukractl`: talks to the API only, never loads BPF |
 | Console | `http://<hypervisor>:30970` |
 | Module | `github.com/zyvorai/shukra` |
-| License | [Zyvor Production License v1.0](LICENSE) (free for non-production use) |
+| License | [Zyvor Production License v1.0](LICENSE) (commercial license required) |
 
 ---
 
@@ -256,7 +256,7 @@ Shukra **0.1.0** is tagged; [CHANGELOG.md](CHANGELOG.md) lists what has merged t
 
 ## Support
 
-Non-production use is free under the Zyvor Production License v1.0; production use requires a commercial license (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://rzp.io/rzp/utwdYh3>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
+A commercial license is required to run it (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://rzp.io/rzp/utwdYh3>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 ---
 
