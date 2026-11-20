@@ -56,23 +56,6 @@ Full history: [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## Shukra vs libvirt exporter + Prometheus
-
-![Shukra vs libvirt exporter + Prometheus: not just counters, causes with evidence](docs/ux/readme-vs.jpg)
-
-| | **Shukra** | **libvirt exporter + Prometheus** (typical KVM monitoring) |
-|---|---|---|
-| Data source | eBPF on the hypervisor: KVM exits, scheduler, block, memory, VM taps, VMM syscalls | libvirt domain statistics |
-| Per-VM metrics | Histograms and counters, plus Prometheus `/metrics` | Counters for CPU, memory, disk and network |
-| Slow VM | Ranked host-side causes with evidence, now or for a past time | Graphs to correlate by hand |
-| Noisy neighbours | vCPU preemption: who took whose CPU | CPU time per VM |
-| Guest traffic | Connects, handshakes, DNS and TLS names on the VM's tap | Interface byte, packet and drop counters |
-| Dropped packets | Per tap, by the kernel's own drop reason | Drop counts |
-| Response | Audit-first egress policy and isolation on approval, off until configured | Observe only |
-| **Choose the libvirt exporter when** | | Per-VM counters in Grafana are enough, or the host cannot run eBPF |
-
----
-
 ## See it live
 
 <table>
