@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { fixtureMode, fixtureResponse } from './fixtures';
 
 // The API token is the credential itself. It is kept in memory for this page

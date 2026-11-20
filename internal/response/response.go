@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // Package response decides what to do when a detection fires. The only thing it can do to a VM is isolate it,
 // and by default it does not even do that: it proposes, and a person approves. Every guardrail lives here so
 // that one place says what an automatic action may and may not do:

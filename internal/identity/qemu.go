@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // Package identity resolves KVM guests from the QEMU process command line and,
 // when FluxVM is installed, from its VM records. It does not see processes
 // inside the guest.

@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // Package persist keeps the records worth surviving a restart: detections,
 // isolation requests, and a flight-recorder snapshot. Files are JSON, one record
 // per line for the logs. Nothing here is a source of truth for counters.

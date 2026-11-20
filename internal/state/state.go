@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // Package state is the userspace snapshot shukrad serves.
 // Enforcement is recorded here and never applied to a datapath.
 package state

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Render the 1600x900 Shukra cards to real PNGs:
 #   shukra-social-card.html       -> docs/shukra-social.png       (README, light)
 #                                 -> web/public/og.png            (Open Graph and X card; byte-identical to the light PNG)

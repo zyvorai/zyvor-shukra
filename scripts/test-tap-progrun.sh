@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # test-tap-progrun.sh [OBJECT]: the tap program's egress policy, tried packet by packet on a real kernel.
 #
 # The program is loaded as a private copy (its own maps, in a mount namespace with a fresh bpffs, attached to

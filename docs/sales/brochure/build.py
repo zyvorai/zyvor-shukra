@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Build the Shukra product brochure PDF.
 
     python3 docs/sales/brochure/build.py            # writes Zyvor-Shukra-Product-Brochure.pdf here

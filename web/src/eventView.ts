@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 /** Filtering, ordering and paging of the event tables, kept apart from the components so it can be tested. */
 
 export type Ev = Record<string, unknown>;

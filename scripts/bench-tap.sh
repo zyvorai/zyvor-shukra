@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # bench-tap.sh OBJECT [OBJECT...]: what the tap program costs per packet, measured on this kernel.
 #
 # Each object is loaded as a private copy, in its own mount namespace with a fresh bpffs, so it has maps of its

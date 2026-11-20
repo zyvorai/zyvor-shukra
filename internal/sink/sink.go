@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // Package sink delivers detections somewhere an operator will see them.
 // Delivery is asynchronous and lossy by design: the event path never waits on a
 // slow webhook. A detection that cannot be delivered is counted, not retried

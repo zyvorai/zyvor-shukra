@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Build a release tarball and a .deb for THIS machine's architecture into dist/.
 #
 # Needs Linux with clang, llvm-strip, bpftool and kernel BTF (see `make generate`).

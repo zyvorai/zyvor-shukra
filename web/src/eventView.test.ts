@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { expect, test } from 'vitest';
 import { type Ev, hasText, inVM, newestFirst, NO_VM, page, PAGE, vmOf } from './eventView';
 

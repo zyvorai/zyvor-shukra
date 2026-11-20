@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 export const fixtureMode = import.meta.env.VITE_FIXTURE === '1';
 
 const now = '2026-09-19T09:42:10Z';

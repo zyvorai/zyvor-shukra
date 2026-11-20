@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Tiny SVG helpers for the brochure diagrams (stdlib only)."""
 import html, textwrap
 

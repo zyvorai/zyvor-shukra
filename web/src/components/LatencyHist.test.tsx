@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 import LatencyHist from './LatencyHist';

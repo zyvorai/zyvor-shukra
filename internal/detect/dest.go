@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // Package detect matches destination IPs against an operator watchlist.
 // Matching is a userspace decision. It does not attach a datapath program.
 package detect

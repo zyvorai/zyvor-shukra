@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # End-to-end test of the tap program and isolation, on a real kernel.
 #
 # A network namespace plays the guest, joined to the host by a veth pair whose host
