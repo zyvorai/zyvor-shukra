@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 # Deploys the static landing page in site/. Requires GitHub Pages with
 # Source = "GitHub Actions" (repo Settings > Pages).
