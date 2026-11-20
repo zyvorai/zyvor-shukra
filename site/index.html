@@ -7,19 +7,19 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#ffffff" />
   <title>Shukra · eBPF runtime intelligence for KVM</title>
-  <meta name="description" content="eBPF-powered runtime intelligence and security for KVM. Shukra watches every QEMU/KVM workload from the hypervisor, with no agent in the guest. Free under Apache-2.0." />
+  <meta name="description" content="eBPF-powered runtime intelligence and security for KVM. Shukra watches every QEMU/KVM workload from the hypervisor, with no agent in the guest. Free for non-production use under the Zyvor Production License v1.0." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="canonical" href="https://zyvorai.github.io/zyvor-shukra/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Shukra" />
   <meta property="og:title" content="Shukra · eBPF runtime intelligence for KVM" />
-  <meta property="og:description" content="eBPF-powered runtime intelligence and security for KVM. Shukra watches every QEMU/KVM workload from the hypervisor, with no agent in the guest. Free under Apache-2.0." />
+  <meta property="og:description" content="eBPF-powered runtime intelligence and security for KVM. Shukra watches every QEMU/KVM workload from the hypervisor, with no agent in the guest. Free for non-production use under the Zyvor Production License v1.0." />
   <meta property="og:url" content="https://zyvorai.github.io/zyvor-shukra/" />
   <meta name="twitter:card" content="summary" />
   <script src="theme.js"></script>
   <link rel="stylesheet" href="site.css" />
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"Shukra","description":"eBPF-powered runtime intelligence and security for KVM, with no agent in the guest.","codeRepository":"https://github.com/zyvorai/zyvor-shukra","programmingLanguage":"Go","license":"https://www.apache.org/licenses/LICENSE-2.0","url":"https://zyvorai.github.io/zyvor-shukra/"}
+  {"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"Shukra","description":"eBPF-powered runtime intelligence and security for KVM, with no agent in the guest.","codeRepository":"https://github.com/zyvorai/zyvor-shukra","programmingLanguage":"Go","license":"https://github.com/zyvorai/zyvor-shukra/blob/main/LICENSE","url":"https://zyvorai.github.io/zyvor-shukra/"}
   </script>
 </head>
 <body>
@@ -43,7 +43,7 @@
       <h1 id="hero-h">Every VM, from outside. <em>No agent in the guest.</em></h1>
       <p class="lede">Shukra sits on the hypervisor and watches every QEMU/KVM workload with eBPF. The daemon joins kernel traces to the QEMU process and gives an operator a console and a CLI that say <strong>what they know, how they know it, and what they cannot see.</strong> Observe. Protect. Explain.</p>
       <p class="cta"><a class="btn primary" href="#quickstart">Quickstart</a><a class="btn" href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/tutorials/README.md">Tutorials</a><a class="link" href="https://github.com/zyvorai/zyvor-shukra">Source on GitHub</a></p>
-      <ul class="chips" aria-label="Facts"><li class="ok">Apache-2.0</li><li>Go 1.27+</li><li>Linux 6.6+ for the tap</li><li>x86_64 and arm64</li></ul>
+      <ul class="chips" aria-label="Facts"><li class="ok">Zyvor Production License v1.0</li><li>Go 1.27+</li><li>Linux 6.6+ for the tap</li><li>x86_64 and arm64</li></ul>
     </div>
     <div class="term" role="group" aria-label="Quickstart commands">
       <div class="term-head"><i></i><i></i><i></i><span>shukractl</span></div>
@@ -203,20 +203,20 @@ make web
 
   <section id="license" aria-labelledby="license-h">
     <h2 id="license-h">License</h2>
-    <p class="sub">Shukra is free and open source under the <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/LICENSE">Apache License 2.0</a>. Copyright 2026 Zyvor. What it reads, what it can do, and what a hostile guest can do to it: <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+    <p class="sub">Shukra is source-available under the <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/LICENSE">Zyvor Production License v1.0</a>. Non-production use is free; production use requires a commercial license (<a href="https://zyvor.dev/buy">zyvor.dev/buy</a>). Copyright 2026 Zyvor. What it reads, what it can do, and what a hostile guest can do to it: <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/SECURITY.md">SECURITY.md</a>.</p>
   </section>
 
   <section id="support" aria-labelledby="support-h">
     <div class="support">
       <h2 id="support-h">Support the project</h2>
-      <p class="sub">Free under Apache-2.0. If it helps you, you can donate any amount you like: <a href="https://rzp.io/rzp/utwdYh3" rel="noopener">https://rzp.io/rzp/utwdYh3</a>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: <a href="mailto:sales@zyvor.dev">sales@zyvor.dev</a>.</p>
+      <p class="sub">Non-production use is free under the Zyvor Production License v1.0; production use requires a commercial license (sales@zyvor.dev). If it helps you, you can donate any amount you like: <a href="https://rzp.io/rzp/utwdYh3" rel="noopener">https://rzp.io/rzp/utwdYh3</a>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: <a href="mailto:sales@zyvor.dev">sales@zyvor.dev</a>.</p>
       <p class="cta"><a class="btn primary" href="https://rzp.io/rzp/utwdYh3" rel="noopener">Donate any amount</a></p>
     </div>
   </section>
 </main>
 
 <footer>
-  <p><b>Shukra</b> · © 2026 Zyvor AI Labs Private Limited · <a href="https://zyvor.dev">zyvor.dev</a> · Apache-2.0 · <a href="#support">Support</a></p>
+  <p><b>Shukra</b> · © 2026 Zyvor AI Labs Private Limited · <a href="https://zyvor.dev">zyvor.dev</a> · Zyvor Production License · <a href="#support">Support</a></p>
   <p><a href="https://github.com/zyvorai/zyvor-shukra">GitHub</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/tutorials/README.md">Tutorials</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/api.md">API</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/docs/index.md">Docs</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/SECURITY.md">Security</a> · <a href="https://github.com/zyvorai/zyvor-shukra/blob/main/CHANGELOG.md">Changelog</a></p>
 </footer>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

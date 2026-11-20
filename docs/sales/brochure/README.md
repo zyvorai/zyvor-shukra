@@ -74,7 +74,7 @@ Re-check these when the product changes. A number in the brochure that is not in
 | CI, live guest (fluxvm) and release workflows; amd64 and arm64 packages; the live-guest test asks a real QEMU over QMP to open `/etc/shadow` and requires a critical `vmm-sensitive-open` for that VM, 58 of 58 checks on the reference hypervisor; an audit policy marks exactly what is outside its list on a real guest | `.github/workflows/`, `README.md` "Continuous integration", `docs/testing.md` "The live guest test", `CHANGELOG.md` "Build and tooling" |
 | No tagged release yet | `CHANGELOG.md` |
 | "Recently added" chips: the feature headings of `CHANGELOG.md` "Unreleased" (Build and tooling, Documentation refresh, API and CLI fixes, the two brochure entries and Console text are left out: they are not features) | the headings of `CHANGELOG.md` "Unreleased" |
-| Apache-2.0, Copyright 2026 Zyvor | `LICENSE` |
+| Zyvor Production License v1.0, Copyright 2026 Zyvor | `LICENSE` |
 | PacketWolf and Zeus OS as intended consumers, not in this repository | `README.md` |
 | The `trace contention` and `explain --at` examples | copied from `docs/tutorials/09-after-the-fact.md` |
 | The `vmm-sensitive-open` and `vmm-syscall` lines on the "Watching the VMM" page | copied from `docs/vmm-tripwires.md` "What becomes a detection" |
