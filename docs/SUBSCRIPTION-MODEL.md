@@ -1,6 +1,6 @@
 # Shukra: support subscriptions
 
-Shukra is source-available software under the Zyvor Production License v1.0. A commercial license is required to run it.
+Shukra is source-available software under the Zyvor Production License v1.0. Non-production use is free; production use requires a commercial license.
 
 Teams that want supported releases and defined response targets can buy an annual **support subscription** from Zyvor.
 
