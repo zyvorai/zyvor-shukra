@@ -1,6 +1,6 @@
 # Shukra: support subscriptions
 
-Shukra is source-available software under the Zyvor Production License v1.0. Non-production use is free; production use requires a commercial license.
+Shukra is source-available software under the Zyvor Production Licence v2.0. A 30-day trial is available on request from sales@zyvor.dev (a paid evaluation Order at no charge); production and any other use needs a paid Order under the Zyvor Production Licence v2.0.
 
 Teams that want supported releases and defined response targets can buy an annual **support subscription** from Zyvor.
 
@@ -19,6 +19,6 @@ Rates are quoted by Zyvor: contact [sales@zyvor.dev](mailto:sales@zyvor.dev).
 - Annual prepaid subscription is the default, with a 12-month minimum. Multi-year prepay is available.
 - Minimums apply after any discounts.
 - Implementation, migration, training and managed operations are separate services.
-- At expiry, updates, downloads and support end. Rights under the Zyvor Production License v1.0 continue per its terms.
+- At expiry, updates, downloads and support end. Rights under the Zyvor Production Licence v2.0 continue per its terms.
 - Response targets need a contracted scope and are not uptime guarantees.
 - Existing signed agreements keep their agreed terms.

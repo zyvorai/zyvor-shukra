@@ -3,7 +3,7 @@
 # Shukra
 
 [![CI](https://img.shields.io/github/actions/workflow/status/zyvorai/zyvor-shukra/ci.yml?branch=main&style=flat-square&labelColor=1d1d1f&label=CI)](https://github.com/zyvorai/zyvor-shukra/actions/workflows/ci.yml)
-[![License: Zyvor Production 1.0](https://img.shields.io/badge/License-Zyvor_Production_1.0-1d1d1f.svg)](LICENSE)
+[![License: Zyvor Production Licence v2.0](https://img.shields.io/badge/License-Zyvor_Production_Licence_v2.0-1d1d1f.svg)](LICENSE)
 [![Go 1.27+](https://img.shields.io/badge/go-1.27%2B-0071e3?style=flat-square&labelColor=1d1d1f)](#requirements)
 [![Linux 6.6+ for guest traffic and isolation](https://img.shields.io/badge/linux-6.6%2B%20for%20the%20tap-0071e3?style=flat-square&labelColor=1d1d1f)](#requirements)
 [![x86_64 and arm64](https://img.shields.io/badge/arch-x86__64%20%C2%B7%20arm64-0071e3?style=flat-square&labelColor=1d1d1f)](#requirements)
@@ -139,7 +139,7 @@ How identity, the tap program, history windows and detection fit together is in 
 | CLI | `shukractl`: talks to the API only, never loads BPF |
 | Console | `http://<hypervisor>:30970` |
 | Module | `github.com/zyvorai/shukra` |
-| License | [Zyvor Production License v1.0](LICENSE) (30-day evaluation free; production use needs a commercial license) |
+| License | [Zyvor Production Licence v2.0](LICENSE) (30-day trial on request; production and any other use needs a paid Order) |
 
 ---
 
@@ -256,13 +256,13 @@ Shukra **0.1.0** is tagged; [CHANGELOG.md](CHANGELOG.md) lists what has merged t
 
 ## Support
 
-Evaluation is free for 30 days per organization; a commercial license is required for production use (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://rzp.io/rzp/utwdYh3>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
+A 30-day trial is available on request from sales@zyvor.dev (a paid evaluation Order at no charge); production and any other use needs a paid Order under the Zyvor Production Licence v2.0. If it helps you, you can donate any amount you like: <https://rzp.io/rzp/utwdYh3>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 ---
 
 ## License
 
-Shukra is source-available under the **[Zyvor Production License v1.0](LICENSE)** (SPDX `LicenseRef-Zyvor-Production-1.0`; see [NOTICE](NOTICE)). Evaluation is free for 30 days per organization; production use requires a commercial license from Zyvor AI Labs ([zyvor.dev/buy](https://zyvor.dev/buy), 30-day trial key available). Copyright 2026 Zyvor.
+Shukra is source-available under the **[Zyvor Production Licence v2.0](LICENSE)** (SPDX `LicenseRef-Zyvor-Production-2.0`; see [NOTICE](NOTICE)). A 30-day trial is available on request from [sales@zyvor.dev](mailto:sales@zyvor.dev) (a paid evaluation Order at no charge); production and any other use needs a paid Order under the Zyvor Production Licence v2.0 ([zyvor.dev/buy](https://zyvor.dev/buy)). Copyright 2026 Zyvor.
 
 **Price:** INR 25,499 per node per year incl. 18% GST in India; US$257 per node per year excl. tax elsewhere. Buy: [zyvor.dev/buy](https://zyvor.dev/buy). Orders of USD 5,000 or more and quotes are invoiced in USD through Skydo.
 

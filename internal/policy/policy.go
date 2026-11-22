@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package policy is the per-VM egress policy: which networks a VM may start connections to, learned from what
 // it has been seen to do, tried out in audit mode, and only then enforced.

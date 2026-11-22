@@ -27,7 +27,7 @@ The Zyvor "Z" mark is drawn inline in blue.
 ## Facts on the cards
 
 Every claim is one the README already sources: **8 eBPF programs** (the eight `bpf/*.bpf.c` files, see
-[The programs](../../README.md#the-programs)), **no guest agent**, **Zyvor Production License v1.0**, and the tagline
+[The programs](../../README.md#the-programs)), **no guest agent**, **Zyvor Production Licence v2.0**, and the tagline
 "eBPF runtime intelligence for KVM". If the program count changes, update both HTML sources and rebuild.
 
 ## GitHub Social preview
