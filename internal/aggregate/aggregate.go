@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package aggregate folds per-PID counters onto discovered QEMU virtual machines.
 // PIDs that are not in a VM thread group stay in the host rollup. They are never given a fake VM name.

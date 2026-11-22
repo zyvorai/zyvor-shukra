@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 # Capture the console pages for the brochure from fixture mode (no daemon, no live data).
 #   ./docs/sales/brochure/capture.sh [page ...]      # default: every page

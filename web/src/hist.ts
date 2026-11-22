@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // The daemon sends latency as log2 buckets (internal/hist): bucket i counts values
 // below 2^(i+1) ns, and bucket 0 also holds 0 and 1. These helpers turn that into

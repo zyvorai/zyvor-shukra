@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package baseline learns what each VM normally does, so that what is new for that VM can be noticed
 // without anyone writing a rule for it: the networks it talks to, the DNS names it looks up, and who

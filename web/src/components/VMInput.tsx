@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 /** A VM-name text field that suggests the VMs the daemon knows about. */
 export default function VMInput({ value, names, onChange, label }: { value: string; names: string[]; onChange: (v: string) => void; label: string }) {

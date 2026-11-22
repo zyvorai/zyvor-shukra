@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // What the Isolate page may offer, decided from what the daemon says about
 // enforcement. Kept apart from the page so the rules can be tested without a DOM.
